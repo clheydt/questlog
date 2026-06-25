@@ -370,7 +370,7 @@
 // ── Config ────────────────────────────────────────────────────────────────────
 // PASTE YOUR KEYS HERE after setup (or enter them in Settings)
 const DEFAULT_SB_URL = "https://vsuaozczglydhxtxuero.supabase.co";
-const DEFAULT_SB_KEY = "sb_publishable_L0VAZGB7ARoSU62kOQREbA_TJZMcbqr";
+const DEFAULT_SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdWFvemN6Z2x5ZGh4dHh1ZXJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMzM1MzgsImV4cCI6MjA5NzkwOTUzOH0.FZNeVE9A8Kae7FYn6lkejxKngbSub1zqHyoFG2F7v8M";
 const DEFAULT_API_KEY = "";
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -424,30 +424,41 @@ async function sbFetch(path, method = 'GET', body = null) {
 }
 
 async function loadTasks() {
-  const data = await sbFetch('/tasks?order=created_at.asc');
-  if (data) {
-    tasks = data.filter(t => !t.someday);
-    somedayItems = data.filter(t => t.someday);
-    renderTasks();
-    renderSomeday();
-  } else {
-    tasks = JSON.parse(localStorage.getItem('ql_tasks') || '[]');
-    somedayItems = JSON.parse(localStorage.getItem('ql_someday') || '[]');
-    renderTasks();
-    renderSomeday();
+  try {
+    const data = await sbFetch('/tasks?order=created_at.asc');
+    if (data && data.length >= 0) {
+      tasks = data.filter(t => !t.someday);
+      somedayItems = data.filter(t => t.someday);
+      renderTasks();
+      renderSomeday();
+      return;
+    }
+  } catch(e) {
+    console.log('Supabase load failed, using local storage');
   }
+  tasks = JSON.parse(localStorage.getItem('ql_tasks') || '[]');
+  somedayItems = JSON.parse(localStorage.getItem('ql_someday') || '[]');
+  renderTasks();
+  renderSomeday();
 }
 
 async function saveTask(task) {
-  const { id, ...payload } = task;
-  const data = await sbFetch('/tasks', 'POST', payload);
-  if (data && data[0]) {
-    task.id = data[0].id;
-  } else {
-    task.id = task.id || crypto.randomUUID();
-    const local = JSON.parse(localStorage.getItem('ql_tasks') || '[]');
+  task.id = task.id || crypto.randomUUID();
+  try {
+    const { id, ...payload } = task;
+    const data = await sbFetch('/tasks', 'POST', payload);
+    if (data && data[0]) {
+      task.id = data[0].id;
+    }
+  } catch(e) {
+    console.log('Supabase save failed, using local storage', e);
+  }
+  const key = task.someday ? 'ql_someday' : 'ql_tasks';
+  const local = JSON.parse(localStorage.getItem(key) || '[]');
+  const exists = local.find(t => t.id === task.id);
+  if (!exists) {
     local.push(task);
-    localStorage.setItem('ql_tasks', JSON.stringify(local));
+    localStorage.setItem(key, JSON.stringify(local));
   }
 }
 
