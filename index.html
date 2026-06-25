@@ -81,6 +81,9 @@ html,body{height:100%;overflow:hidden;background:var(--p);font-family:'Crimson P
 .tg.urg{color:var(--red)}
 .empty{padding:40px 20px;text-align:center;font-size:14px;font-style:italic;color:var(--di);line-height:1.7}
 
+.del{color:var(--di);font-size:16px;padding:2px 6px;cursor:pointer;flex-shrink:0;line-height:1}
+.del:active{color:var(--red)}
+
 /* ── SOMEDAY ── */
 #someday-panel{background:var(--p)}
 #slist{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
@@ -249,6 +252,11 @@ async function dbPatch(id, updates) {
   console.log('dbPatch status', r.status);
 }
 
+async function dbDelete(id) {
+  const r = await fetch(C.sbUrl + '/rest/v1/tasks?id=eq.' + id, { method: 'DELETE', headers: sbH() });
+  console.log('dbDelete status', r.status);
+}
+
 // ── State ──────────────────────────────────────────────────────────────────
 let tasks = [];
 let somedays = [];
@@ -287,8 +295,13 @@ function renderSomeday() {
   if (!somedays.length) { el.innerHTML = '<div class="empty">Your Someday Space is empty.<br>Dreams and shelved projects live here.</div>'; return; }
   el.innerHTML = somedays.map(t => `
     <div class="si">
-      <div class="sb">· Someday ·</div>
-      <div class="sn">${esc(t.name)}</div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+        <div>
+          <div class="sb">· Someday ·</div>
+          <div class="sn">${esc(t.name)}</div>
+        </div>
+        <div class="del" onclick="deleteSomeday('${t.id}')">✕</div>
+      </div>
     </div>`).join('');
 }
 
@@ -299,6 +312,18 @@ async function toggle(id) {
   renderTasks();
   await dbPatch(id, { done: t.done });
   if (t.done) addAI(`${esc(t.name)} — marked complete. A small deed, but real.`);
+}
+
+async function deleteTask(id) {
+  tasks = tasks.filter(t => t.id !== id);
+  renderTasks();
+  await dbDelete(id);
+}
+
+async function deleteSomeday(id) {
+  somedays = somedays.filter(s => s.id !== id);
+  renderSomeday();
+  await dbDelete(id);
 }
 
 // ── Chat ───────────────────────────────────────────────────────────────────
