@@ -558,7 +558,7 @@ async function toggleTask(id) {
 function filterTasks(filter, btn) {
   currentFilter = filter;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  if (btn) btn.classList.add('active');
   renderTasks();
 }
 
@@ -757,9 +757,13 @@ function saveSettings() {
 // ── Tab switching ─────────────────────────────────────────────────────────────
 function switchTab(name, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
+  if (btn) btn.classList.add('active');
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.getElementById(`${name}-panel`).classList.add('active');
+  const panel = document.getElementById(`${name}-panel`);
+  if (panel) {
+    panel.classList.add('active');
+    if (name === 'tasks' || name === 'someday') loadTasks();
+  }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
