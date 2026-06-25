@@ -5,168 +5,458 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="QuestLog">
-<meta name="theme-color" content="#F2EAD8">
+<meta name="theme-color" content="#EEF2FF">
 <title>QuestLog</title>
 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
 <script>eruda.init();</script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=IM+Fell+English+SC&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
 :root {
-  --p:  #F2EAD8; --pd: #E8D9B8; --pp: #EDE0C4;
-  --ink: #1C1208; --im: #2A1A06;
-  --br: #8B6030; --bl: #C4A97A;
-  --red: #8B3020; --grn: #3A6B2A;
-  --mu: #5C3D1A; --di: #8B7355;
-  --sat: env(safe-area-inset-top,0px);
-  --sab: env(safe-area-inset-bottom,0px);
+  --bg1: #EEF2FF;
+  --bg2: #F5E6FF;
+  --bg3: #E6F4FF;
+  --surface: rgba(255,255,255,0.7);
+  --surfaceB: rgba(255,255,255,0.5);
+  --border: rgba(0,0,0,0.08);
+  --ink: #1a1a2e;
+  --sub: #6b7280;
+  --accent: #7c6af0;
+  --accentB: #a78bfa;
+  --red: #ef4444;
+  --sat: env(safe-area-inset-top, 44px);
+  --sab: env(safe-area-inset-bottom, 0px);
 }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden;background:var(--p);font-family:'Crimson Pro',Georgia,serif;color:var(--ink)}
-#app{display:flex;flex-direction:column;height:100%;padding-top:var(--sat)}
 
-/* topbar */
-#topbar{background:var(--pd);border-bottom:1.5px solid var(--br);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-#app-title{font-family:'IM Fell English SC',serif;font-size:20px;color:var(--im)}
-#scribe-label{font-size:12px;font-style:italic;color:var(--di);display:flex;align-items:center;gap:6px}
-.sdot{width:7px;height:7px;border-radius:50%;background:var(--grn);flex-shrink:0}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-/* tabs */
-#tabs{display:flex;background:var(--pp);border-bottom:1px solid var(--bl);flex-shrink:0}
-.tab{flex:1;padding:10px 4px;text-align:center;font-family:'IM Fell English SC',serif;font-size:12px;letter-spacing:.04em;color:var(--di);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent}
-.tab.on{color:var(--im);border-bottom-color:var(--red)}
+html, body {
+  height: 100%; overflow: hidden;
+  font-family: 'Inter', -apple-system, sans-serif;
+  color: var(--ink);
+}
 
-/* panels */
-#panels{flex:1;overflow:hidden;position:relative}
-.panel{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;visibility:hidden}
-.panel.on{visibility:visible}
+/* ── Gradient background ── */
+#bg {
+  position: fixed; inset: 0; z-index: 0;
+  background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 50%, var(--bg3) 100%);
+}
 
-/* ── CHAT ── */
-#msgs{flex:1;overflow-y:auto;padding:14px 14px 8px;display:flex;flex-direction:column;gap:12px;-webkit-overflow-scrolling:touch;background-image:repeating-linear-gradient(transparent,transparent 27px,#C4A97A33 27px,#C4A97A33 28px);background-size:100% 28px}
-.m{max-width:88%}.m.ai{align-self:flex-start}.m.me{align-self:flex-end}
-.ms{font-family:'IM Fell English SC',serif;font-size:10px;letter-spacing:.07em;color:var(--br);margin-bottom:3px;padding:0 2px}
-.m.me .ms{text-align:right;color:var(--di)}
-.mb{padding:9px 13px;font-size:15px;line-height:1.55;border-radius:2px}
-.m.ai .mb{background:var(--pd);border:1px solid var(--bl);border-top-left-radius:0}
-.m.me .mb{background:var(--im);color:var(--p);border-top-right-radius:0}
-.thinking{display:flex;gap:4px;padding:10px 13px}
-.dot{width:6px;height:6px;border-radius:50%;background:var(--di);animation:pu 1.2s ease-in-out infinite}
+#app {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; height: 100%;
+  padding-top: var(--sat);
+}
+
+/* ── Top bar ── */
+#topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px 10px;
+  flex-shrink: 0;
+}
+
+#top-left h1 {
+  font-size: 17px; font-weight: 600; color: var(--ink); letter-spacing: -0.3px;
+}
+#top-left p {
+  font-size: 13px; color: var(--sub); margin-top: 1px;
+}
+
+#menu-btn {
+  width: 38px; height: 38px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; position: relative;
+  backdrop-filter: blur(10px);
+  flex-shrink: 0;
+}
+#menu-btn svg { width: 18px; height: 18px; color: var(--ink); }
+
+/* ── Dropdown menu ── */
+#dropdown {
+  position: absolute; top: calc(var(--sat) + 58px); right: 20px;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  z-index: 50;
+  min-width: 180px;
+  display: none;
+}
+#dropdown.open { display: block; }
+.dd-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 18px;
+  font-size: 15px; font-weight: 500; color: var(--ink);
+  cursor: pointer; border-bottom: 1px solid var(--border);
+}
+.dd-item:last-child { border-bottom: none; }
+.dd-item:active { background: rgba(124,106,240,0.08); }
+.dd-icon { font-size: 18px; width: 22px; text-align: center; }
+
+/* ── Overlay backdrop ── */
+#backdrop {
+  position: fixed; inset: 0; z-index: 40;
+  display: none;
+}
+#backdrop.open { display: block; }
+
+/* ── Messages ── */
+#msgs {
+  flex: 1; overflow-y: auto;
+  padding: 16px 20px 8px;
+  display: flex; flex-direction: column; gap: 14px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Welcome state */
+#welcome {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 20px; text-align: center; gap: 8px;
+}
+#welcome h2 { font-size: 24px; font-weight: 600; color: var(--ink); letter-spacing: -0.5px; }
+#welcome p { font-size: 15px; color: var(--sub); line-height: 1.5; }
+
+/* Orb */
+.orb {
+  width: 120px; height: 120px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #d8b4fe, #818cf8 50%, #a5f3fc);
+  margin: 0 auto 20px;
+  animation: float 4s ease-in-out infinite;
+  box-shadow: 0 20px 60px rgba(124,106,240,0.3);
+}
+@keyframes float {
+  0%,100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Quick prompts */
+#prompts {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 0 20px 12px; flex-shrink: 0;
+}
+.prompt-chip {
+  background: var(--surface);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 11px 16px;
+  font-size: 14px; color: var(--sub);
+  cursor: pointer; text-align: left;
+  transition: background 0.15s;
+}
+.prompt-chip:active { background: rgba(255,255,255,0.9); }
+
+/* Messages */
+.m { max-width: 82%; display: flex; flex-direction: column; gap: 3px; }
+.m.ai { align-self: flex-start; }
+.m.me { align-self: flex-end; }
+.msender { font-size: 11px; font-weight: 500; color: var(--sub); padding: 0 4px; }
+.m.me .msender { text-align: right; }
+.mb {
+  padding: 11px 15px; font-size: 15px; line-height: 1.55; border-radius: 18px;
+}
+.m.ai .mb {
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  border-bottom-left-radius: 4px;
+  color: var(--ink);
+}
+.m.me .mb {
+  background: var(--accent);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+.thinking { display: flex; gap: 5px; padding: 13px 15px; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sub); animation: pu 1.2s ease-in-out infinite; }
 .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
 @keyframes pu{0%,80%,100%{opacity:.3}40%{opacity:1}}
 
-/* chips */
-#chips{padding:8px 12px 6px;display:flex;gap:6px;overflow-x:auto;border-top:.5px solid var(--bl);background:var(--pp);flex-shrink:0;scrollbar-width:none}
-#chips::-webkit-scrollbar{display:none}
-.chip{font-family:'Crimson Pro',serif;font-size:13px;font-style:italic;padding:4px 11px;border:1px solid var(--br);color:var(--mu);border-radius:2px;background:var(--p);white-space:nowrap;cursor:pointer;flex-shrink:0}
+/* ── Input bar ── */
+#ibar {
+  display: flex; align-items: flex-end; gap: 10px;
+  padding: 12px 16px;
+  padding-bottom: calc(12px + var(--sab));
+  flex-shrink: 0;
+}
+#inp-wrap {
+  flex: 1; display: flex; align-items: flex-end;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 10px 16px;
+  gap: 8px;
+}
+#inp {
+  flex: 1; font-family: 'Inter', sans-serif; font-size: 15px;
+  background: none; border: none; outline: none; resize: none;
+  color: var(--ink); line-height: 1.4;
+  min-height: 22px; max-height: 100px;
+}
+#inp::placeholder { color: var(--sub); }
+#mic-btn {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: none; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; color: var(--sub);
+}
+#mic-btn svg { width: 18px; height: 18px; }
+#send-btn {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--accent); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(124,106,240,0.4);
+}
+#send-btn:active { background: var(--accentB); }
+#send-btn svg { width: 18px; height: 18px; stroke: white; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 
-/* input */
-#irow{display:flex;gap:8px;padding:10px 12px;padding-bottom:calc(10px + var(--sab));border-top:1px solid var(--br);background:var(--pd);align-items:flex-end;flex-shrink:0}
-#inp{flex:1;font-family:'Crimson Pro',serif;font-size:15px;background:var(--p);border:1px solid var(--br);color:var(--ink);padding:8px 11px;border-radius:2px;resize:none;min-height:40px;max-height:110px;outline:none;line-height:1.5;-webkit-appearance:none}
-#inp::placeholder{color:var(--di);font-style:italic}
-#sbtn{width:40px;height:40px;background:var(--im);border:none;cursor:pointer;border-radius:2px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-#sbtn svg{width:16px;height:16px;stroke:var(--p);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+/* ── Slide panels (tasks, someday, settings) ── */
+.slide-panel {
+  position: fixed; inset: 0; z-index: 60;
+  display: flex; flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+}
+.slide-panel.open { transform: translateX(0); }
+.sp-bg {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, var(--bg1), var(--bg2));
+}
+.sp-inner {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; height: 100%;
+  padding-top: var(--sat);
+}
+.sp-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 20px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sp-back {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--surface); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; backdrop-filter: blur(10px);
+}
+.sp-back svg { width: 18px; height: 18px; stroke: var(--ink); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sp-title { font-size: 17px; font-weight: 600; color: var(--ink); }
+.sp-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 12px 0; }
 
-/* ── LEDGER ── */
-#ledger-panel{background:var(--p)}
-.ph{padding:12px 14px 8px;border-bottom:1px solid var(--bl);background:var(--pp);flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
-.pl{font-family:'IM Fell English SC',serif;font-size:11px;letter-spacing:.1em;color:var(--br)}
-#tlist{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.ti{padding:11px 14px;border-bottom:.5px solid var(--bl);display:flex;align-items:flex-start;gap:10px;cursor:pointer}
-.tc{width:18px;height:18px;border:1.5px solid var(--br);border-radius:2px;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center}
-.tc.dn{background:var(--im);border-color:var(--im)}
-.tc.dn::after{content:'✓';font-size:11px;color:var(--p)}
-.tn{font-size:15px;color:var(--ink);line-height:1.3}
-.tn.dn{text-decoration:line-through;color:var(--di)}
-.tm{display:flex;gap:8px;margin-top:3px;flex-wrap:wrap}
-.tg{font-size:11px;font-style:italic;color:var(--di)}
-.tg.urg{color:var(--red)}
-.empty{padding:40px 20px;text-align:center;font-size:14px;font-style:italic;color:var(--di);line-height:1.7}
+/* Task items */
+.ti {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 13px 20px;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+}
+.tc {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid var(--border);
+  flex-shrink: 0; margin-top: 1px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; background: white;
+}
+.tc.dn { background: var(--accent); border-color: var(--accent); }
+.tc.dn::after { content: '✓'; font-size: 12px; color: white; font-weight: 600; }
+.t-body { flex: 1; min-width: 0; cursor: pointer; }
+.tn { font-size: 15px; font-weight: 400; color: var(--ink); line-height: 1.3; }
+.tn.dn { text-decoration: line-through; color: var(--sub); }
+.tm { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+.tg {
+  font-size: 11px; font-weight: 500; padding: 2px 8px;
+  border-radius: 99px; background: rgba(124,106,240,0.1); color: var(--accent);
+}
+.tg.urg { background: rgba(239,68,68,0.1); color: var(--red); }
+.tg.lo { background: rgba(52,168,83,0.1); color: #34a853; }
+.tg svg { display:inline;vertical-align:middle;margin-right:2px; }
+.del {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--sub); font-size: 14px;
+  flex-shrink: 0; margin-top: 0;
+}
+.del:active { background: rgba(239,68,68,0.1); color: var(--red); }
 
-.del{color:var(--di);font-size:16px;padding:2px 6px;cursor:pointer;flex-shrink:0;line-height:1}
-.del:active{color:var(--red)}
+/* Someday items */
+.si {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 20px; border-bottom: 1px solid var(--border); gap: 10px;
+}
+.si-left { flex: 1; min-width: 0; }
+.sb { font-size: 10px; font-weight: 600; letter-spacing: .08em; color: var(--accentB); text-transform: uppercase; margin-bottom: 2px; display:flex; align-items:center; gap:4px; }
+.sn { font-size: 15px; color: var(--ink); }
 
-/* ── SOMEDAY ── */
-#someday-panel{background:var(--p)}
-#slist{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.si{padding:12px 14px;border-bottom:.5px solid var(--bl)}
-.sb{font-family:'IM Fell English SC',serif;font-size:9px;letter-spacing:.06em;color:var(--red);margin-bottom:2px}
-.sn{font-size:15px;color:var(--ink)}
+/* Settings */
+.ss { padding: 20px 20px 12px; border-bottom: 1px solid var(--border); }
+.sl { font-size: 11px; font-weight: 600; letter-spacing: .06em; color: var(--sub); text-transform: uppercase; margin-bottom: 12px; }
+.sr { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+.sr label { font-size: 13px; font-weight: 500; color: var(--sub); }
+.sr input {
+  font-family: 'Inter', sans-serif; font-size: 15px;
+  background: rgba(255,255,255,0.7); border: 1px solid var(--border);
+  color: var(--ink); padding: 10px 14px; border-radius: 12px; outline: none;
+  width: 100%; -webkit-appearance: none;
+}
+.sn2 { font-size: 12px; color: var(--sub); line-height: 1.5; margin-top: 4px; }
+.svbtn {
+  width: 100%; padding: 14px; font-family: 'Inter', sans-serif;
+  font-size: 15px; font-weight: 600;
+  background: var(--accent); color: white;
+  border: none; border-radius: 14px; cursor: pointer;
+  box-shadow: 0 4px 12px rgba(124,106,240,0.3);
+}
 
-/* ── SETTINGS ── */
-#settings-panel{background:var(--p);overflow-y:auto;-webkit-overflow-scrolling:touch}
-.ss{padding:16px 16px 8px;border-bottom:.5px solid var(--bl)}
-.sl{font-family:'IM Fell English SC',serif;font-size:10px;letter-spacing:.1em;color:var(--br);margin-bottom:10px}
-.sr{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
-.sr label{font-size:13px;font-style:italic;color:var(--mu)}
-.sr input,.sr textarea{font-family:'Crimson Pro',serif;font-size:14px;background:var(--pd);border:1px solid var(--bl);color:var(--ink);padding:8px 10px;border-radius:2px;outline:none;width:100%;-webkit-appearance:none}
-.sn2{font-size:12px;font-style:italic;color:var(--di);line-height:1.5;margin-top:4px}
-.svbtn{width:100%;padding:11px;font-family:'IM Fell English SC',serif;font-size:13px;letter-spacing:.05em;background:var(--im);color:var(--p);border:none;border-radius:2px;cursor:pointer;margin-top:4px}
+/* Empty state */
+.empty {
+  padding: 60px 20px; text-align: center;
+  font-size: 15px; color: var(--sub); line-height: 1.7;
+}
 
-/* ── ONBOARDING ── */
-#ob{position:fixed;inset:0;background:var(--p);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;padding-top:calc(32px + var(--sat));padding-bottom:calc(32px + var(--sab));z-index:100}
-#ob.h{display:none}
-.oo{font-size:11px;color:var(--bl);letter-spacing:4px;margin-bottom:16px}
-.ot{font-family:'IM Fell English SC',serif;font-size:28px;color:var(--im);text-align:center;margin-bottom:6px}
-.os{font-size:15px;font-style:italic;color:var(--mu);text-align:center;margin-bottom:24px;line-height:1.6}
-.or{width:80px;height:1px;background:var(--bl);margin:0 auto 20px}
-.of{width:100%;max-width:380px;margin-bottom:16px}
-.of label{display:block;font-family:'IM Fell English SC',serif;font-size:11px;letter-spacing:.08em;color:var(--br);margin-bottom:5px}
-.of input,.of textarea{width:100%;font-family:'Crimson Pro',serif;font-size:16px;background:var(--pd);border:1px solid var(--br);color:var(--ink);padding:10px 12px;border-radius:2px;outline:none;-webkit-appearance:none}
-.of textarea{resize:none;min-height:72px;line-height:1.5}
-.of input::placeholder,.of textarea::placeholder{color:var(--di);font-style:italic}
-.obtn{width:100%;max-width:380px;padding:13px;font-family:'IM Fell English SC',serif;font-size:14px;letter-spacing:.06em;background:var(--im);color:var(--p);border:none;border-radius:2px;cursor:pointer}
+/* ── Onboarding ── */
+#ob {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 40px 28px;
+  padding-top: calc(40px + var(--sat));
+  padding-bottom: calc(40px + var(--sab));
+}
+#ob-bg {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, #EEF2FF, #F5E6FF, #E6F4FF);
+}
+#ob.h { display: none; }
+.ob-inner { position: relative; z-index: 1; width: 100%; max-width: 380px; display: flex; flex-direction: column; align-items: center; }
+.ob-orb { width: 80px; height: 80px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #d8b4fe, #818cf8 50%, #a5f3fc); margin-bottom: 24px; box-shadow: 0 12px 40px rgba(124,106,240,0.3); }
+.ob-title { font-size: 28px; font-weight: 700; color: var(--ink); letter-spacing: -0.5px; margin-bottom: 6px; }
+.ob-sub { font-size: 15px; color: var(--sub); text-align: center; margin-bottom: 32px; line-height: 1.5; }
+.ob-field { width: 100%; margin-bottom: 14px; }
+.ob-field label { display: block; font-size: 13px; font-weight: 500; color: var(--sub); margin-bottom: 6px; }
+.ob-field input, .ob-field textarea {
+  width: 100%; font-family: 'Inter', sans-serif; font-size: 15px;
+  background: rgba(255,255,255,0.8); border: 1px solid var(--border);
+  color: var(--ink); padding: 12px 16px; border-radius: 14px; outline: none;
+  -webkit-appearance: none;
+}
+.ob-field textarea { resize: none; min-height: 80px; line-height: 1.5; }
+.ob-btn {
+  width: 100%; padding: 15px; font-family: 'Inter', sans-serif;
+  font-size: 16px; font-weight: 600; margin-top: 6px;
+  background: var(--accent); color: white;
+  border: none; border-radius: 16px; cursor: pointer;
+  box-shadow: 0 6px 20px rgba(124,106,240,0.4);
+}
 </style>
 </head>
 <body>
 
+<div id="bg"></div>
+
+<!-- Onboarding -->
 <div id="ob">
-  <div class="oo">✦ · ✦ · ✦</div>
-  <div class="ot">QuestLog</div>
-  <div class="os">Your personal companion.<br>Let us begin with one question.</div>
-  <div class="or"></div>
-  <div class="of"><label>Your name</label><input id="ob1" type="text" placeholder="What shall I call you?" autocomplete="off" autocorrect="off"></div>
-  <div class="of"><label>Name your Scribe</label><input id="ob2" type="text" placeholder="Give your companion a name…" autocomplete="off" autocorrect="off"></div>
-  <div class="of"><label>One thing rattling around in your head</label><textarea id="ob3" placeholder="Something you haven't dealt with yet…" rows="3"></textarea></div>
-  <button class="obtn" onclick="finishOb()">Begin the Chronicle ✦</button>
+  <div id="ob-bg"></div>
+  <div class="ob-inner">
+    <div class="ob-orb"></div>
+    <div class="ob-title">QuestLog</div>
+    <div class="ob-sub">Your personal companion.<br>Let's start with one question.</div>
+    <div class="ob-field"><label>Your name</label><input id="ob1" type="text" placeholder="What shall I call you?" autocomplete="off" autocorrect="off"></div>
+    <div class="ob-field"><label>Name your Scribe</label><input id="ob2" type="text" placeholder="Give your companion a name…" autocomplete="off" autocorrect="off"></div>
+    <div class="ob-field"><label>One thing rattling around in your head</label><textarea id="ob3" placeholder="Something you haven't dealt with yet…" rows="3"></textarea></div>
+    <button class="ob-btn" onclick="finishOb()">Begin →</button>
+  </div>
 </div>
 
+<!-- Main app -->
 <div id="app">
   <div id="topbar">
-    <div id="app-title">✦ QuestLog</div>
-    <div id="scribe-label"><div class="sdot"></div><span id="sname">The Scribe</span></div>
+    <div id="top-left">
+      <h1 id="greeting">Good day</h1>
+      <p id="scribe-label">Your Scribe is ready</p>
+    </div>
+    <div id="menu-btn" onclick="toggleMenu()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/></svg>
+    </div>
   </div>
-  <div id="tabs">
-    <button class="tab on" onclick="goTab('chat',this)">The Scribe</button>
-    <button class="tab" onclick="goTab('ledger',this)">Ledger</button>
-    <button class="tab" onclick="goTab('someday',this)">Someday</button>
-    <button class="tab" onclick="goTab('settings',this)">Settings</button>
+
+  <!-- Dropdown -->
+  <div id="backdrop" onclick="closeMenu()"></div>
+  <div id="dropdown">
+    <div class="dd-item" onclick="openPanel('tasks')">
+      <span class="dd-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span> My Tasks
+    </div>
+    <div class="dd-item" onclick="openPanel('someday')">
+      <span class="dd-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span> Someday
+    </div>
+    <div class="dd-item" onclick="openPanel('settings')">
+      <span class="dd-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> Settings
+    </div>
   </div>
-  <div id="panels">
 
-    <div class="panel on" id="chat-panel">
-      <div id="msgs"></div>
-      <div id="chips">
-        <div class="chip" onclick="fill('I have 20 minutes and low energy — what should I do?')">20 min, low energy</div>
-        <div class="chip" onclick="fill('What is most urgent right now?')">what\'s urgent?</div>
-        <div class="chip" onclick="fill('I need to do a brain dump')">brain dump</div>
-        <div class="chip" onclick="fill('Break down my biggest task into steps')">break it down</div>
-      </div>
-      <div id="irow">
-        <textarea id="inp" placeholder="Speak your mind…" rows="1" oninput="rsz(this)" onkeydown="kd(event)"></textarea>
-        <button id="sbtn" onclick="send()" aria-label="Send"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
-      </div>
+  <!-- Chat -->
+  <div id="msgs"></div>
+
+  <!-- Welcome / prompts shown before first message -->
+  <div id="prompts">
+    <div class="prompt-chip" onclick="fill('I need to do a brain dump — lots swirling')">💭 Brain dump everything</div>
+    <div class="prompt-chip" onclick="fill('I have 20 minutes and low energy — what should I do?')">⚡ What should I do right now?</div>
+    <div class="prompt-chip" onclick="fill('What is most urgent?')">🔥 What\'s most urgent?</div>
+  </div>
+
+  <div id="ibar">
+    <div id="inp-wrap">
+      <textarea id="inp" placeholder="Tell me what's on your mind…" rows="1" oninput="rsz(this)" onkeydown="kd(event)"></textarea>
+      <button id="mic-btn" aria-label="Voice input">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      </button>
     </div>
+    <button id="send-btn" onclick="send()" aria-label="Send">
+      <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+</div>
 
-    <div class="panel" id="ledger-panel">
-      <div class="ph"><div class="pl">Your Ledger</div></div>
-      <div id="tlist"></div>
+<!-- Tasks panel -->
+<div class="slide-panel" id="tasks-panel">
+  <div class="sp-bg"></div>
+  <div class="sp-inner">
+    <div class="sp-head">
+      <div class="sp-back" onclick="closePanel('tasks')"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+      <div class="sp-title">My Tasks</div>
     </div>
+    <div class="sp-body" id="tlist"></div>
+  </div>
+</div>
 
-    <div class="panel" id="someday-panel">
-      <div class="ph"><div class="pl">The Someday Space</div></div>
-      <div id="slist"></div>
+<!-- Someday panel -->
+<div class="slide-panel" id="someday-panel">
+  <div class="sp-bg"></div>
+  <div class="sp-inner">
+    <div class="sp-head">
+      <div class="sp-back" onclick="closePanel('someday')"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+      <div class="sp-title">Someday</div>
     </div>
+    <div class="sp-body" id="slist"></div>
+  </div>
+</div>
 
-    <div class="panel" id="settings-panel">
+<!-- Settings panel -->
+<div class="slide-panel" id="settings-panel">
+  <div class="sp-bg"></div>
+  <div class="sp-inner">
+    <div class="sp-head">
+      <div class="sp-back" onclick="closePanel('settings')"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+      <div class="sp-title">Settings</div>
+    </div>
+    <div class="sp-body">
       <div class="ss">
         <div class="sl">Your Details</div>
         <div class="sr"><label>Your name</label><input type="text" id="s1" autocomplete="off"></div>
@@ -175,7 +465,7 @@ html,body{height:100%;overflow:hidden;background:var(--p);font-family:'Crimson P
       <div class="ss">
         <div class="sl">AI Connection</div>
         <div class="sr"><label>Anthropic API key</label><input type="password" id="s3" placeholder="sk-ant-…" autocomplete="off" spellcheck="false"></div>
-        <div class="sn2">Stored on your device only. Never shared.</div>
+        <div class="sn2">Stored on this device only. Never shared.</div>
       </div>
       <div class="ss">
         <div class="sl">Supabase</div>
@@ -184,7 +474,6 @@ html,body{height:100%;overflow:hidden;background:var(--p);font-family:'Crimson P
       </div>
       <div class="ss"><button class="svbtn" onclick="saveCfg()">Save Settings</button></div>
     </div>
-
   </div>
 </div>
 
@@ -193,283 +482,302 @@ html,body{height:100%;overflow:hidden;background:var(--p);font-family:'Crimson P
 const SB_URL = "https://vsuaozczglydhxtxuero.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdWFvemN6Z2x5ZGh4dHh1ZXJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMzM1MzgsImV4cCI6MjA5NzkwOTUzOH0.FZNeVE9A8Kae7FYn6lkejxKngbSub1zqHyoFG2F7v8M";
 
-let C = {
-  name: '', scribe: 'the Scribe', apiKey: '', sbUrl: SB_URL, sbKey: SB_KEY
-};
+let C = { name:'', scribe:'the Scribe', apiKey:'', sbUrl:SB_URL, sbKey:SB_KEY };
 
-function lsGet(k, def) { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch { return def; } }
-function lsSet(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+function lsGet(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}}
+function lsSet(k,v){localStorage.setItem(k,JSON.stringify(v))}
 
-function loadCfg() {
-  const s = lsGet('ql_cfg', {});
-  C = { ...C, ...s };
-  if (!C.sbUrl) C.sbUrl = SB_URL;
-  if (!C.sbKey) C.sbKey = SB_KEY;
+function loadCfg(){
+  const s=lsGet('ql_cfg',{});
+  C={...C,...s};
+  if(!C.sbUrl)C.sbUrl=SB_URL;
+  if(!C.sbKey)C.sbKey=SB_KEY;
 }
-
-function saveCfg() {
-  C.name  = document.getElementById('s1').value.trim();
-  C.scribe = document.getElementById('s2').value.trim() || 'the Scribe';
-  C.apiKey = document.getElementById('s3').value.trim();
-  C.sbUrl  = document.getElementById('s4').value.trim().replace(/\/$/, '') || SB_URL;
-  C.sbKey  = document.getElementById('s5').value.trim() || SB_KEY;
-  lsSet('ql_cfg', C);
-  document.getElementById('sname').textContent = C.scribe;
+function saveCfg(){
+  C.name=document.getElementById('s1').value.trim();
+  C.scribe=document.getElementById('s2').value.trim()||'the Scribe';
+  C.apiKey=document.getElementById('s3').value.trim();
+  C.sbUrl=document.getElementById('s4').value.trim().replace(/\/$/,'')||SB_URL;
+  C.sbKey=document.getElementById('s5').value.trim()||SB_KEY;
+  lsSet('ql_cfg',C);
+  updateGreeting();
   alert('Saved.');
 }
+function fillSettings(){
+  document.getElementById('s1').value=C.name;
+  document.getElementById('s2').value=C.scribe;
+  document.getElementById('s3').value=C.apiKey;
+  document.getElementById('s4').value=C.sbUrl;
+  document.getElementById('s5').value=C.sbKey;
+}
 
-function fillSettings() {
-  document.getElementById('s1').value = C.name;
-  document.getElementById('s2').value = C.scribe;
-  document.getElementById('s3').value = C.apiKey;
-  document.getElementById('s4').value = C.sbUrl;
-  document.getElementById('s5').value = C.sbKey;
+function updateGreeting(){
+  const h=new Date().getHours();
+  const g=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  document.getElementById('greeting').textContent=C.name?`${g}, ${C.name}`:`${g}`;
+  document.getElementById('scribe-label').textContent=`${C.scribe||'Your Scribe'} is ready`;
 }
 
 // ── Supabase ───────────────────────────────────────────────────────────────
-function sbH() {
-  return { 'apikey': C.sbKey, 'Authorization': 'Bearer ' + C.sbKey, 'Content-Type': 'application/json', 'Accept': 'application/json', 'Prefer': 'return=representation' };
-}
+function sbH(){return{'apikey':C.sbKey,'Authorization':'Bearer '+C.sbKey,'Content-Type':'application/json','Accept':'application/json','Prefer':'return=representation'}}
 
-async function dbGet() {
-  const r = await fetch(C.sbUrl + '/rest/v1/tasks?order=created_at.asc', { headers: sbH() });
-  console.log('dbGet status', r.status);
-  if (!r.ok) { console.log('dbGet error', await r.text()); return []; }
+async function dbGet(){
+  const r=await fetch(C.sbUrl+'/rest/v1/tasks?order=created_at.asc',{headers:sbH()});
+  console.log('dbGet',r.status);
+  if(!r.ok){console.log('dbGet err',await r.text());return[]}
   return await r.json();
 }
-
-async function dbInsert(row) {
-  const payload = { name: row.name, energy: row.energy||'medium', minutes: row.minutes||15, done: !!row.done, urgent: !!row.urgent, tier: row.tier||'task', someday: !!row.someday, notes: row.notes||null };
-  const r = await fetch(C.sbUrl + '/rest/v1/tasks', { method: 'POST', headers: sbH(), body: JSON.stringify(payload) });
-  console.log('dbInsert status', r.status, row.name);
-  const txt = await r.text();
-  if (!r.ok) { console.log('dbInsert error', txt); return null; }
-  return JSON.parse(txt)[0] || null;
+async function dbInsert(row){
+  const p={name:row.name,energy:row.energy||'medium',minutes:row.minutes||15,done:!!row.done,urgent:!!row.urgent,tier:row.tier||'task',someday:!!row.someday,notes:row.notes||null};
+  const r=await fetch(C.sbUrl+'/rest/v1/tasks',{method:'POST',headers:sbH(),body:JSON.stringify(p)});
+  console.log('dbInsert',r.status,row.name);
+  const t=await r.text();
+  if(!r.ok){console.log('dbInsert err',t);return null}
+  return JSON.parse(t)[0]||null;
 }
-
-async function dbPatch(id, updates) {
-  const r = await fetch(C.sbUrl + '/rest/v1/tasks?id=eq.' + id, { method: 'PATCH', headers: sbH(), body: JSON.stringify(updates) });
-  console.log('dbPatch status', r.status);
+async function dbPatch(id,u){
+  const r=await fetch(C.sbUrl+'/rest/v1/tasks?id=eq.'+id,{method:'PATCH',headers:sbH(),body:JSON.stringify(u)});
+  console.log('dbPatch',r.status);
 }
-
-async function dbDelete(id) {
-  const r = await fetch(C.sbUrl + '/rest/v1/tasks?id=eq.' + id, { method: 'DELETE', headers: sbH() });
-  console.log('dbDelete status', r.status);
+async function dbDelete(id){
+  const r=await fetch(C.sbUrl+'/rest/v1/tasks?id=eq.'+id,{method:'DELETE',headers:sbH()});
+  console.log('dbDelete',r.status);
 }
 
 // ── State ──────────────────────────────────────────────────────────────────
-let tasks = [];
-let somedays = [];
-let history = [];
+let tasks=[], somedays=[], history=[];
 
-async function loadAll() {
-  const rows = await dbGet();
-  tasks    = rows.filter(r => !r.someday);
-  somedays = rows.filter(r =>  r.someday);
-  console.log('tasks:', tasks.length, 'somedays:', somedays.length);
-  renderTasks();
-  renderSomeday();
+async function loadAll(){
+  const rows=await dbGet();
+  tasks=rows.filter(r=>!r.someday);
+  somedays=rows.filter(r=>r.someday);
+  console.log('tasks:',tasks.length,'somedays:',somedays.length);
+  renderTasks(); renderSomeday();
 }
 
 // ── Render ─────────────────────────────────────────────────────────────────
-function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
-function renderTasks() {
-  const el = document.getElementById('tlist');
-  if (!tasks.length) { el.innerHTML = '<div class="empty">No tasks yet.<br>Tell the Scribe what\'s on your mind.</div>'; return; }
-  el.innerHTML = tasks.map(t => `
-    <div class="ti" onclick="toggle('${t.id}')">
-      <div class="tc ${t.done?'dn':''}"></div>
-      <div>
+function renderTasks(){
+  const el=document.getElementById('tlist');
+  if(!tasks.length){el.innerHTML='<div class="empty">No tasks yet.<br>Tell your Scribe what\'s on your mind.</div>';return}
+  el.innerHTML=tasks.map(t=>`
+    <div class="ti">
+      <div class="tc ${t.done?'dn':''}" onclick="toggle('${t.id}')"></div>
+      <div class="t-body" onclick="toggle('${t.id}')">
         <div class="tn ${t.done?'dn':''}">${t.urgent&&!t.done?'⚡ ':''}${esc(t.name)}</div>
         <div class="tm">
-          ${t.energy?`<span class="tg ${t.energy==='high'?'urg':''}">${t.energy} energy</span>`:''}
-          ${t.minutes?`<span class="tg">~${t.minutes} min</span>`:''}
+          ${t.energy?`<span class="tg ${t.energy==='high'?'urg':t.energy==='low'?'lo':''}">${t.energy==='high'?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>':t.energy==='low'?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22V12M12 12L8 16M12 12L16 16"/><path d="M8 6h8"/><path d="M10 2h4"/></svg>':'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/></svg>'} ${t.energy}</span>`:''}
+          ${t.minutes?`<span class="tg"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${t.minutes}m</span>`:''}
+          ${t.tier&&t.tier!=='task'?`<span class="tg"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> ${t.tier}</span>`:''}
         </div>
       </div>
+      <div class="del" onclick="deleteTask('${t.id}')">✕</div>
     </div>`).join('');
 }
 
-function renderSomeday() {
-  const el = document.getElementById('slist');
-  if (!somedays.length) { el.innerHTML = '<div class="empty">Your Someday Space is empty.<br>Dreams and shelved projects live here.</div>'; return; }
-  el.innerHTML = somedays.map(t => `
+function renderSomeday(){
+  const el=document.getElementById('slist');
+  if(!somedays.length){el.innerHTML='<div class="empty">Dreams and shelved projects live here.</div>';return}
+  el.innerHTML=somedays.map(t=>`
     <div class="si">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
-        <div>
-          <div class="sb">· Someday ·</div>
-          <div class="sn">${esc(t.name)}</div>
-        </div>
-        <div class="del" onclick="deleteSomeday('${t.id}')">✕</div>
+      <div class="si-left">
+        <div class="sb"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>Someday</div>
+        <div class="sn">${esc(t.name)}</div>
       </div>
+      <div class="del" onclick="deleteSomeday('${t.id}')">✕</div>
     </div>`).join('');
 }
 
-async function toggle(id) {
-  const t = tasks.find(x => x.id === id);
-  if (!t) return;
-  t.done = !t.done;
+async function toggle(id){
+  const t=tasks.find(x=>x.id===id);
+  if(!t)return;
+  t.done=!t.done;
   renderTasks();
-  await dbPatch(id, { done: t.done });
-  if (t.done) addAI(`${esc(t.name)} — marked complete. A small deed, but real.`);
+  await dbPatch(id,{done:t.done});
+  if(t.done) addAI(`${esc(t.name)} — marked complete. Well done.`);
 }
-
-async function deleteTask(id) {
-  tasks = tasks.filter(t => t.id !== id);
-  renderTasks();
-  await dbDelete(id);
-}
-
-async function deleteSomeday(id) {
-  somedays = somedays.filter(s => s.id !== id);
-  renderSomeday();
-  await dbDelete(id);
-}
+async function deleteTask(id){tasks=tasks.filter(t=>t.id!==id);renderTasks();await dbDelete(id)}
+async function deleteSomeday(id){somedays=somedays.filter(s=>s.id!==id);renderSomeday();await dbDelete(id)}
 
 // ── Chat ───────────────────────────────────────────────────────────────────
-function addMsg(role, text) {
-  const el = document.getElementById('msgs');
-  const d = document.createElement('div');
-  d.className = 'm ' + (role === 'me' ? 'me' : 'ai');
-  const who = role === 'me' ? (C.name||'You') : (C.scribe||'The Scribe');
-  d.innerHTML = `<div class="ms">${esc(who)}</div><div class="mb">${text.replace(/\n/g,'<br>')}</div>`;
+let showingPrompts=true;
+
+function addMsg(role,text){
+  if(showingPrompts){
+    document.getElementById('prompts').style.display='none';
+    showingPrompts=false;
+  }
+  const el=document.getElementById('msgs');
+  const d=document.createElement('div');
+  d.className='m '+(role==='me'?'me':'ai');
+  const who=role==='me'?(C.name||'You'):(C.scribe||'The Scribe');
+  d.innerHTML=`<div class="msender">${esc(who)}</div><div class="mb">${text.replace(/\n/g,'<br>')}</div>`;
   el.appendChild(d);
-  el.scrollTop = el.scrollHeight;
+  el.scrollTop=el.scrollHeight;
 }
-function addAI(t) { addMsg('ai', t); }
+function addAI(t){addMsg('ai',t)}
 
-function showThinking() {
-  const el = document.getElementById('msgs');
-  const d = document.createElement('div');
-  d.className = 'm ai'; d.id = 'th';
-  d.innerHTML = `<div class="ms">${esc(C.scribe||'The Scribe')}</div><div class="mb"><div class="thinking"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
-  el.appendChild(d); el.scrollTop = el.scrollHeight;
+function showThinking(){
+  const el=document.getElementById('msgs');
+  const d=document.createElement('div');
+  d.className='m ai';d.id='th';
+  d.innerHTML=`<div class="msender">${esc(C.scribe||'The Scribe')}</div><div class="mb"><div class="thinking"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+  el.appendChild(d);el.scrollTop=el.scrollHeight;
 }
 
-function sysPrompt() {
-  const tl = tasks.filter(t=>!t.done).map(t=>`- ${t.name} (${t.energy||'medium'} energy, ${t.minutes||'?'} min${t.urgent?', URGENT':''})`).join('\n') || 'No active tasks.';
-  return `You are ${C.scribe||'the Scribe'}, a warm, honest, witty personal companion for ${C.name||'the user'}. Help them manage their life through natural conversation.
+function sysPrompt(){
+  const tl=tasks.filter(t=>!t.done).map(t=>`- ${t.name} (${t.energy||'medium'}, ${t.minutes||'?'}min${t.urgent?', URGENT':''})`).join('\n')||'No active tasks.';
+  return `You are ${C.scribe||'the Scribe'}, a warm honest witty personal companion for ${C.name||'the user'}. Help them manage their life through natural conversation.
 
-Personality: warm not saccharine, dry wit, honest, speaks sparingly and with purpose, slightly literary but always clear.
+Personality: warm not saccharine, dry wit, honest, speaks sparingly and with purpose, clear and direct.
 
-Current tasks:
-${tl}
+Current tasks:\n${tl}
 
-Respond ONLY with valid JSON — no markdown, no extra text:
-{"message":"your reply","tasks":[{"name":"","energy":"low|medium|high","minutes":15,"done":false,"urgent":false,"tier":"task|project|epic","someday":false}],"completedNames":["name of completed task if user said they finished one"]}
+Respond ONLY with valid JSON, no markdown:
+{"message":"your reply","tasks":[{"name":"","energy":"low|medium|high","minutes":15,"done":false,"urgent":false,"tier":"task|project|epic","someday":false}],"completedNames":["task name if user said they finished one"]}
 
 Rules:
-- Return complete updated task list every time
-- someday:true for dreams, far-future wishes, shelved big projects
+- Return COMPLETE task list every time including existing tasks
+- someday:true only for dreams and far-future things, not regular tasks
 - If user asks what to do, pick ONE task decisively
-- Keep message ADHD-friendly — brief, warm, no bullet walls
+- Brief, warm, ADHD-friendly — no bullet walls
 - Never invent tasks the user did not mention`;
 }
 
-async function send() {
-  const inp = document.getElementById('inp');
-  const txt = inp.value.trim();
-  if (!txt) return;
-  inp.value = ''; inp.style.height = 'auto';
-  addMsg('me', txt);
-  history.push({ role: 'user', content: txt });
+async function send(){
+  const inp=document.getElementById('inp');
+  const txt=inp.value.trim();
+  if(!txt)return;
+  inp.value='';inp.style.height='auto';
+  addMsg('me',txt);
+  history.push({role:'user',content:txt});
   showThinking();
 
-  if (!C.apiKey) {
+  if(!C.apiKey){
     document.getElementById('th')?.remove();
-    addAI("The Scribe's quill is dry — add your Anthropic API key in Settings.");
+    addAI("Add your Anthropic API key in Settings (⋯) to wake me up.");
     return;
   }
 
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': C.apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, system: sysPrompt(), messages: history })
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':C.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:sysPrompt(),messages:history})
     });
-    const data = await res.json();
+    const data=await res.json();
     document.getElementById('th')?.remove();
-    if (data.error) { addAI('Error: ' + data.error.message); return; }
+    if(data.error){addAI('Error: '+data.error.message);return}
 
-    const raw = data.content?.[0]?.text || '{}';
-    history.push({ role: 'assistant', content: raw });
+    const raw=data.content?.[0]?.text||'{}';
+    history.push({role:'assistant',content:raw});
 
     let p;
-    try { p = JSON.parse(raw.replace(/```json|```/g,'').trim()); }
-    catch(e) { addAI(raw); return; }
+    try{p=JSON.parse(raw.replace(/```json|```/g,'').trim())}
+    catch(e){addAI(raw);return}
 
-    if (p.message) addAI(p.message);
+    if(p.message)addAI(p.message);
 
-    if (Array.isArray(p.tasks)) {
-      for (const pt of p.tasks) {
-        if (pt.someday) {
-          const exists = somedays.some(s => s.name.toLowerCase() === pt.name.toLowerCase());
-          if (!exists) {
-            const row = await dbInsert({ ...pt, someday: true });
-            if (row) somedays.push(row);
+    if(Array.isArray(p.tasks)){
+      for(const pt of p.tasks){
+        if(pt.someday){
+          if(!somedays.some(s=>s.name.toLowerCase()===pt.name.toLowerCase())){
+            const row=await dbInsert({...pt,someday:true});
+            if(row)somedays.push(row);
           }
         } else {
-          const exists = tasks.some(t => t.name.toLowerCase() === pt.name.toLowerCase());
-          if (!exists) {
-            const row = await dbInsert({ ...pt, someday: false });
-            if (row) tasks.push(row);
+          if(!tasks.some(t=>t.name.toLowerCase()===pt.name.toLowerCase())){
+            const row=await dbInsert({...pt,someday:false});
+            if(row)tasks.push(row);
           }
         }
       }
-      if (Array.isArray(p.completedNames)) {
-        for (const n of p.completedNames) {
-          const t = tasks.find(x => x.name.toLowerCase().includes(n.toLowerCase()));
-          if (t && !t.done) { t.done = true; if (t.id) await dbPatch(t.id, { done: true }); }
+      if(Array.isArray(p.completedNames)){
+        for(const n of p.completedNames){
+          const t=tasks.find(x=>x.name.toLowerCase().includes(n.toLowerCase()));
+          if(t&&!t.done){t.done=true;if(t.id)await dbPatch(t.id,{done:true})}
         }
       }
-      renderTasks();
-      renderSomeday();
+      renderTasks();renderSomeday();
     }
-  } catch(e) {
+  }catch(e){
     document.getElementById('th')?.remove();
     addAI('Something went wrong. Try again.');
-    console.log('send error', e);
+    console.log('send error',e);
   }
 }
 
-// ── Tabs ───────────────────────────────────────────────────────────────────
-function goTab(name, btn) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
-  btn.classList.add('on');
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
-  document.getElementById(name + '-panel').classList.add('on');
-  if (name === 'ledger' || name === 'someday') loadAll();
+// ── Menu ───────────────────────────────────────────────────────────────────
+function toggleMenu(){
+  document.getElementById('dropdown').classList.toggle('open');
+  document.getElementById('backdrop').classList.toggle('open');
+}
+function closeMenu(){
+  document.getElementById('dropdown').classList.remove('open');
+  document.getElementById('backdrop').classList.remove('open');
+}
+function openPanel(name){
+  closeMenu();
+  document.getElementById(name+'-panel').classList.add('open');
+  if(name==='tasks'||name==='someday')loadAll();
+}
+function closePanel(name){
+  document.getElementById(name+'-panel').classList.remove('open');
 }
 
 // ── Onboarding ─────────────────────────────────────────────────────────────
-function finishOb() {
-  const name   = document.getElementById('ob1').value.trim();
-  const scribe = document.getElementById('ob2').value.trim() || 'Aldric';
-  const first  = document.getElementById('ob3').value.trim();
-  if (!name) { document.getElementById('ob1').focus(); return; }
-  C.name = name; C.scribe = scribe;
-  lsSet('ql_cfg', C);
-  lsSet('ql_ob', 1);
+function finishOb(){
+  const name=document.getElementById('ob1').value.trim();
+  const scribe=document.getElementById('ob2').value.trim()||'Aldric';
+  const first=document.getElementById('ob3').value.trim();
+  if(!name){document.getElementById('ob1').focus();return}
+  C.name=name;C.scribe=scribe;
+  lsSet('ql_cfg',C);lsSet('ql_ob',1);
   document.getElementById('ob').classList.add('h');
-  document.getElementById('sname').textContent = C.scribe;
-  fillSettings();
-  addAI(`Well met, ${esc(C.name)}. I am ${esc(C.scribe)} — your Scribe, your companion. Tell me what is on your mind and we shall begin.`);
-  if (first) setTimeout(() => { document.getElementById('inp').value = first; send(); }, 600);
+  updateGreeting();fillSettings();loadAll();
+  addAI(`Well met, ${esc(C.name)}. I am ${esc(C.scribe)}. Tell me what's on your mind and we shall begin.`);
+  if(first)setTimeout(()=>{document.getElementById('inp').value=first;send()},600);
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-function fill(t) { const i = document.getElementById('inp'); i.value = t; i.focus(); rsz(i); }
-function rsz(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 110) + 'px'; }
-function kd(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
+function fill(t){
+  document.getElementById('prompts').style.display='none';
+  showingPrompts=false;
+  const i=document.getElementById('inp');
+  i.value=t;i.focus();rsz(i);
+}
+function rsz(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,100)+'px'}
+function kd(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}}
+
+// ── Dummy data ────────────────────────────────────────────────────────────
+const DUMMY_TASKS = [
+  {id:'d1',name:'Call the dentist',energy:'medium',minutes:10,done:false,urgent:true,tier:'task',someday:false},
+  {id:'d2',name:'Reply to Marcus about the project',energy:'medium',minutes:15,done:false,urgent:false,tier:'task',someday:false},
+  {id:'d3',name:'Pick up dry cleaning',energy:'low',minutes:20,done:false,urgent:false,tier:'task',someday:false},
+  {id:'d4',name:'Redo the home office',energy:'high',minutes:180,done:false,urgent:false,tier:'project',someday:false},
+  {id:'d5',name:'Change the AC filter',energy:'low',minutes:10,done:false,urgent:false,tier:'task',someday:false},
+  {id:'d6',name:'Buy coffee beans',energy:'low',minutes:5,done:true,urgent:false,tier:'task',someday:false},
+];
+const DUMMY_SOMEDAY = [
+  {id:'s1',name:'Learn to sail',someday:true},
+  {id:'s2',name:'Visit Japan',someday:true},
+  {id:'s3',name:'Start a podcast',someday:true},
+  {id:'s4',name:'Write a novel',someday:true},
+];
 
 // ── Init ───────────────────────────────────────────────────────────────────
-loadCfg();
-fillSettings();
-if (lsGet('ql_ob', 0)) {
+loadCfg();fillSettings();updateGreeting();
+if(lsGet('ql_ob',0)){
   document.getElementById('ob').classList.add('h');
-  document.getElementById('sname').textContent = C.scribe;
-  addAI(`Welcome back, ${esc(C.name||'adventurer')}. What needs attending to today?`);
   loadAll();
+  addAI(`Welcome back${C.name?', '+C.name:''}. What needs attending to today?`);
+} else {
+  // Show dummy data in panels for preview before onboarding
+  tasks = DUMMY_TASKS;
+  somedays = DUMMY_SOMEDAY;
+  renderTasks();
+  renderSomeday();
 }
 </script>
 </body>
