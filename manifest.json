@@ -2,7 +2,7 @@
   "name": "QuestLog",
   "short_name": "QuestLog",
   "description": "Your personal companion. Your life, your campaign.",
-  "start_url": "/",
+  "start_url": "/questlog/index.html",
   "display": "standalone",
   "background_color": "#F2EAD8",
   "theme_color": "#F2EAD8",
