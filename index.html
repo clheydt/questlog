@@ -412,14 +412,15 @@ function sbHeaders() {
 }
 
 async function sbFetch(path, method = 'GET', body = null) {
-  if (!cfg.sbUrl || !cfg.sbKey) return null;
+  if (!cfg.sbUrl || !cfg.sbKey) { console.log('No Supabase config'); return null; }
   const res = await fetch(`${cfg.sbUrl}/rest/v1${path}`, {
     method,
     headers: sbHeaders(),
     body: body ? JSON.stringify(body) : null
   });
-  if (!res.ok) return null;
   const text = await res.text();
+  console.log('Supabase', method, path, res.status, text.substring(0, 200));
+  if (!res.ok) return null;
   return text ? JSON.parse(text) : [];
 }
 
@@ -444,21 +445,27 @@ async function loadTasks() {
 
 async function saveTask(task) {
   task.id = task.id || crypto.randomUUID();
+  console.log('Saving task:', task.name, 'someday:', task.someday);
   try {
-    const { id, ...payload } = task;
+    const payload = {
+      name: task.name,
+      energy: task.energy || 'medium',
+      minutes: task.minutes || 15,
+      done: task.done || false,
+      urgent: task.urgent || false,
+      tier: task.tier || 'task',
+      someday: task.someday || false,
+      notes: task.notes || null
+    };
     const data = await sbFetch('/tasks', 'POST', payload);
     if (data && data[0]) {
       task.id = data[0].id;
+      console.log('Saved to Supabase:', task.name, 'id:', task.id);
+    } else {
+      console.log('Supabase returned no data for:', task.name);
     }
   } catch(e) {
-    console.log('Supabase save failed, using local storage', e);
-  }
-  const key = task.someday ? 'ql_someday' : 'ql_tasks';
-  const local = JSON.parse(localStorage.getItem(key) || '[]');
-  const exists = local.find(t => t.id === task.id);
-  if (!exists) {
-    local.push(task);
-    localStorage.setItem(key, JSON.stringify(local));
+    console.log('Supabase save error:', e);
   }
 }
 
@@ -634,12 +641,27 @@ async function sendMsg() {
     if (parsed.message) addAiMsg(parsed.message);
 
     if (Array.isArray(parsed.tasks) && parsed.tasks.length) {
-      const newTasks = parsed.tasks.filter(pt => !tasks.some(t => t.name.toLowerCase() === pt.name.toLowerCase()));
-      for (const nt of newTasks) {
-        const task = { ...nt, done: false, id: null };
-        tasks.push(task);
-        await saveTask(task);
+      const regularTasks = parsed.tasks.filter(pt => !pt.someday);
+      const somedayTasks = parsed.tasks.filter(pt => pt.someday);
+
+      for (const nt of regularTasks) {
+        const exists = tasks.some(t => t.name.toLowerCase() === nt.name.toLowerCase());
+        if (!exists) {
+          const task = { ...nt, done: false, someday: false, id: null };
+          tasks.push(task);
+          await saveTask(task);
+        }
       }
+
+      for (const ns of somedayTasks) {
+        const exists = somedayItems.some(s => s.name.toLowerCase() === ns.name.toLowerCase());
+        if (!exists) {
+          const item = { ...ns, someday: true, id: null };
+          somedayItems.push(item);
+          await saveTask(item);
+        }
+      }
+
       if (Array.isArray(parsed.completedTaskNames)) {
         for (const name of parsed.completedTaskNames) {
           const task = tasks.find(t => t.name.toLowerCase().includes(name.toLowerCase()));
@@ -649,12 +671,7 @@ async function sendMsg() {
           }
         }
       }
-      const newSomeday = parsed.tasks.filter(pt => pt.someday && !somedayItems.some(s => s.name.toLowerCase() === pt.name.toLowerCase()));
-      for (const ns of newSomeday) {
-        const item = { ...ns, id: null };
-        somedayItems.push(item);
-        await saveTask(item);
-      }
+
       renderTasks();
       renderSomeday();
     }
