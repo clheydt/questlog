@@ -278,7 +278,7 @@
   </div>
   <div id="tabs">
     <button class="tab active" onclick="switchTab('chat', this)">The Scribe</button>
-    <button class="tab" onclick="switchTab('tasks', this)">Ledger</button>
+    <button class="tab" onclick="switchTab('task', this)">Ledger</button>
     <button class="tab" onclick="switchTab('someday', this)">Someday</button>
     <button class="tab" onclick="switchTab('settings', this)">Settings</button>
   </div>
@@ -762,7 +762,9 @@ function switchTab(name, btn) {
   const panel = document.getElementById(`${name}-panel`);
   if (panel) {
     panel.classList.add('active');
-    if (name === 'tasks' || name === 'someday') loadTasks();
+    if (name === 'task' || name === 'someday') loadTasks();
+  } else {
+    console.log('Panel not found:', name + '-panel');
   }
 }
 
