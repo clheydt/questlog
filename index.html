@@ -425,18 +425,22 @@ async function sbFetch(path, method = 'GET', body = null) {
 }
 
 async function loadTasks() {
+  console.log('loadTasks called');
   try {
     const data = await sbFetch('/tasks?order=created_at.asc');
-    if (data && data.length >= 0) {
+    console.log('Supabase tasks response:', data);
+    if (Array.isArray(data)) {
       tasks = data.filter(t => !t.someday);
       somedayItems = data.filter(t => t.someday);
+      console.log('Regular tasks:', tasks.length, 'Someday:', somedayItems.length);
       renderTasks();
       renderSomeday();
       return;
     }
   } catch(e) {
-    console.log('Supabase load failed, using local storage');
+    console.log('Supabase load error:', e);
   }
+  console.log('Falling back to localStorage');
   tasks = JSON.parse(localStorage.getItem('ql_tasks') || '[]');
   somedayItems = JSON.parse(localStorage.getItem('ql_someday') || '[]');
   renderTasks();
@@ -672,8 +676,7 @@ async function sendMsg() {
         }
       }
 
-      renderTasks();
-      renderSomeday();
+      await loadTasks();
     }
   } catch(e) {
     document.getElementById('thinking')?.remove();
