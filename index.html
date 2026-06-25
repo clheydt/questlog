@@ -4,798 +4,448 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="QuestLog">
 <meta name="theme-color" content="#F2EAD8">
 <title>QuestLog</title>
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400;1,600&family=IM+Fell+English+SC&display=swap');
-
-  :root {
-    --parch:    #F2EAD8;
-    --parch-dk: #E8D9B8;
-    --parch-dp: #EDE0C4;
-    --ink:      #1C1208;
-    --ink-mid:  #2A1A06;
-    --brown:    #8B6030;
-    --brown-lt: #C4A97A;
-    --red:      #8B3020;
-    --green:    #3A6B2A;
-    --muted:    #5C3D1A;
-    --dimmed:   #8B7355;
-    --safe-top: env(safe-area-inset-top, 0px);
-    --safe-bot: env(safe-area-inset-bottom, 0px);
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; overflow: hidden; background: var(--parch); font-family: 'Crimson Pro', Georgia, serif; color: var(--ink); }
-
-  /* ── App shell ── */
-  #app { display: flex; flex-direction: column; height: 100%; padding-top: var(--safe-top); }
-
-  /* ── Top bar ── */
-  #topbar {
-    background: var(--parch-dk);
-    border-bottom: 1.5px solid var(--brown);
-    padding: 10px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-shrink: 0;
-  }
-  #app-title { font-family: 'IM Fell English SC', serif; font-size: 20px; color: var(--ink-mid); letter-spacing: 0.03em; }
-  #scribe-status { display: flex; align-items: center; gap: 6px; font-size: 12px; font-style: italic; color: var(--dimmed); }
-  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); border: 1px solid #2a5020; flex-shrink: 0; }
-  .status-dot.offline { background: var(--dimmed); border-color: var(--brown); }
-
-  /* ── Tab bar ── */
-  #tabs {
-    display: flex;
-    background: var(--parch-dp);
-    border-bottom: 1px solid var(--brown-lt);
-    flex-shrink: 0;
-  }
-  .tab {
-    flex: 1;
-    padding: 10px 4px;
-    text-align: center;
-    font-family: 'IM Fell English SC', serif;
-    font-size: 12px;
-    letter-spacing: 0.05em;
-    color: var(--dimmed);
-    border: none;
-    background: none;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: color 0.15s, border-color 0.15s;
-  }
-  .tab.active { color: var(--ink-mid); border-bottom-color: var(--red); }
-
-  /* ── Panels ── */
-  #panels { flex: 1; overflow: hidden; position: relative; }
-  .panel { position: absolute; inset: 0; display: flex; flex-direction: column; overflow: hidden; opacity: 0; pointer-events: none; transition: opacity 0.15s; }
-  .panel.active { opacity: 1; pointer-events: all; }
-
-  /* ── PANEL: Chat ── */
-  #messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 14px 14px 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    background-image: repeating-linear-gradient(transparent, transparent 27px, #C4A97A33 27px, #C4A97A33 28px);
-    background-size: 100% 28px;
-    -webkit-overflow-scrolling: touch;
-  }
-  .msg { max-width: 88%; }
-  .msg.ai { align-self: flex-start; }
-  .msg.user { align-self: flex-end; }
-  .msg-sender { font-family: 'IM Fell English SC', serif; font-size: 10px; letter-spacing: 0.07em; color: var(--brown); margin-bottom: 3px; padding: 0 2px; }
-  .msg.user .msg-sender { text-align: right; color: var(--dimmed); }
-  .bubble { padding: 9px 13px; font-size: 15px; line-height: 1.55; border-radius: 2px; }
-  .msg.ai .bubble { background: var(--parch-dk); border: 1px solid var(--brown-lt); color: var(--ink); border-top-left-radius: 0; }
-  .msg.user .bubble { background: var(--ink-mid); color: var(--parch); border: 1px solid var(--ink); border-top-right-radius: 0; }
-  .divider { text-align: center; font-size: 11px; font-style: italic; color: var(--dimmed); padding: 4px 0; position: relative; }
-  .divider::before, .divider::after { content: ''; position: absolute; top: 50%; height: 0.5px; background: var(--brown-lt); width: 30%; }
-  .divider::before { left: 8px; } .divider::after { right: 8px; }
-  .thinking { display: flex; gap: 4px; align-items: center; padding: 10px 13px; }
-  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--dimmed); animation: pulse 1.2s ease-in-out infinite; }
-  .dot:nth-child(2) { animation-delay: 0.2s; } .dot:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes pulse { 0%,80%,100% { opacity: 0.3; } 40% { opacity: 1; } }
-
-  /* Quick chips */
-  #chips { padding: 8px 12px 6px; display: flex; gap: 6px; overflow-x: auto; border-top: 0.5px solid var(--brown-lt); background: var(--parch-dp); flex-shrink: 0; scrollbar-width: none; }
-  #chips::-webkit-scrollbar { display: none; }
-  .chip { font-family: 'Crimson Pro', serif; font-size: 13px; font-style: italic; padding: 4px 11px; border: 1px solid var(--brown); color: var(--muted); border-radius: 2px; background: var(--parch); white-space: nowrap; cursor: pointer; flex-shrink: 0; }
-  .chip:active { background: var(--parch-dk); }
-
-  /* Input row */
-  #input-row {
-    display: flex;
-    gap: 8px;
-    padding: 10px 12px;
-    padding-bottom: calc(10px + var(--safe-bot));
-    border-top: 1px solid var(--brown);
-    background: var(--parch-dk);
-    align-items: flex-end;
-    flex-shrink: 0;
-  }
-  #msg-input {
-    flex: 1;
-    font-family: 'Crimson Pro', serif;
-    font-size: 15px;
-    background: var(--parch);
-    border: 1px solid var(--brown);
-    color: var(--ink);
-    padding: 8px 11px;
-    border-radius: 2px;
-    resize: none;
-    min-height: 40px;
-    max-height: 110px;
-    outline: none;
-    line-height: 1.5;
-    -webkit-appearance: none;
-  }
-  #msg-input::placeholder { color: var(--dimmed); font-style: italic; }
-  #send-btn {
-    width: 40px; height: 40px;
-    background: var(--ink-mid);
-    border: none; cursor: pointer;
-    border-radius: 2px;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
-  #send-btn:active { background: var(--ink); }
-  #send-btn svg { width: 16px; height: 16px; stroke: var(--parch); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-
-  /* ── PANEL: Tasks ── */
-  #task-panel { background: var(--parch); }
-  .panel-head { padding: 12px 14px 8px; border-bottom: 1px solid var(--brown-lt); background: var(--parch-dp); flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; }
-  .panel-label { font-family: 'IM Fell English SC', serif; font-size: 11px; letter-spacing: 0.1em; color: var(--brown); }
-  .add-btn { font-family: 'IM Fell English SC', serif; font-size: 11px; letter-spacing: 0.05em; color: var(--red); background: none; border: 1px solid var(--red); padding: 3px 10px; border-radius: 2px; cursor: pointer; }
-  #task-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-  .task-item { padding: 11px 14px; border-bottom: 0.5px solid var(--brown-lt); display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
-  .task-item:active { background: var(--parch-dk); }
-  .task-check { width: 18px; height: 18px; border: 1.5px solid var(--brown); border-radius: 2px; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; }
-  .task-check.done { background: var(--ink-mid); border-color: var(--ink-mid); }
-  .task-check.done::after { content: '✓'; font-size: 11px; color: var(--parch); }
-  .task-body { flex: 1; min-width: 0; }
-  .task-name { font-size: 15px; color: var(--ink); line-height: 1.3; }
-  .task-name.done { text-decoration: line-through; color: var(--dimmed); }
-  .task-meta { display: flex; gap: 8px; margin-top: 3px; flex-wrap: wrap; }
-  .tag { font-size: 11px; font-style: italic; color: var(--dimmed); }
-  .tag.urgent { color: var(--red); }
-  .tag.low { color: var(--green); }
-  .tier-badge { font-family: 'IM Fell English SC', serif; font-size: 9px; letter-spacing: 0.06em; color: var(--brown); background: var(--parch-dp); border: 0.5px solid var(--brown-lt); padding: 1px 5px; border-radius: 1px; }
-  .empty-state { padding: 40px 20px; text-align: center; font-size: 14px; font-style: italic; color: var(--dimmed); line-height: 1.7; }
-
-  /* Filter tabs */
-  #task-filters { display: flex; gap: 0; background: var(--parch-dp); border-bottom: 0.5px solid var(--brown-lt); flex-shrink: 0; }
-  .filter-btn { flex: 1; padding: 7px 4px; font-family: 'Crimson Pro', serif; font-size: 12px; font-style: italic; color: var(--dimmed); background: none; border: none; cursor: pointer; border-bottom: 1.5px solid transparent; }
-  .filter-btn.active { color: var(--ink-mid); border-bottom-color: var(--brown); }
-
-  /* ── PANEL: Someday ── */
-  #someday-panel { background: var(--parch); }
-  .someday-item { padding: 12px 14px; border-bottom: 0.5px solid var(--brown-lt); }
-  .someday-name { font-size: 15px; color: var(--ink); line-height: 1.3; }
-  .someday-bucket { font-family: 'IM Fell English SC', serif; font-size: 9px; letter-spacing: 0.06em; color: var(--red); margin-bottom: 2px; }
-
-  /* ── PANEL: Settings ── */
-  #settings-panel { background: var(--parch); overflow-y: auto; -webkit-overflow-scrolling: touch; }
-  .settings-section { padding: 16px 16px 8px; border-bottom: 0.5px solid var(--brown-lt); }
-  .settings-label { font-family: 'IM Fell English SC', serif; font-size: 10px; letter-spacing: 0.1em; color: var(--brown); margin-bottom: 10px; }
-  .settings-row { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
-  .settings-row label { font-size: 13px; font-style: italic; color: var(--muted); }
-  .settings-row input, .settings-row textarea {
-    font-family: 'Crimson Pro', serif; font-size: 14px;
-    background: var(--parch-dk); border: 1px solid var(--brown-lt);
-    color: var(--ink); padding: 8px 10px; border-radius: 2px;
-    outline: none; width: 100%; -webkit-appearance: none;
-  }
-  .settings-row textarea { resize: none; min-height: 70px; line-height: 1.5; }
-  .save-btn {
-    width: 100%; padding: 11px;
-    font-family: 'IM Fell English SC', serif; font-size: 13px; letter-spacing: 0.05em;
-    background: var(--ink-mid); color: var(--parch);
-    border: none; border-radius: 2px; cursor: pointer; margin-top: 4px;
-  }
-  .save-btn:active { background: var(--ink); }
-  .settings-note { font-size: 12px; font-style: italic; color: var(--dimmed); line-height: 1.5; margin-top: 6px; }
-
-  /* ── Onboarding overlay ── */
-  #onboarding {
-    position: fixed; inset: 0; background: var(--parch);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 32px 24px; z-index: 100;
-    padding-top: calc(32px + var(--safe-top));
-    padding-bottom: calc(32px + var(--safe-bot));
-  }
-  #onboarding.hidden { display: none; }
-  .ob-ornament { font-size: 11px; color: var(--brown-lt); letter-spacing: 4px; margin-bottom: 16px; }
-  .ob-title { font-family: 'IM Fell English SC', serif; font-size: 28px; color: var(--ink-mid); text-align: center; margin-bottom: 6px; }
-  .ob-sub { font-size: 15px; font-style: italic; color: var(--muted); text-align: center; margin-bottom: 28px; line-height: 1.6; }
-  .ob-rule { width: 80px; height: 1px; background: var(--brown-lt); margin: 0 auto 24px; }
-  .ob-step { width: 100%; max-width: 380px; margin-bottom: 20px; }
-  .ob-step label { display: block; font-family: 'IM Fell English SC', serif; font-size: 11px; letter-spacing: 0.08em; color: var(--brown); margin-bottom: 6px; }
-  .ob-step input {
-    width: 100%; font-family: 'Crimson Pro', serif; font-size: 16px;
-    background: var(--parch-dk); border: 1px solid var(--brown);
-    color: var(--ink); padding: 10px 12px; border-radius: 2px; outline: none;
-    -webkit-appearance: none;
-  }
-  .ob-step input::placeholder { color: var(--dimmed); font-style: italic; }
-  .ob-prompt { width: 100%; max-width: 380px; margin-bottom: 20px; }
-  .ob-prompt label { display: block; font-family: 'IM Fell English SC', serif; font-size: 11px; letter-spacing: 0.08em; color: var(--brown); margin-bottom: 6px; }
-  .ob-prompt textarea {
-    width: 100%; font-family: 'Crimson Pro', serif; font-size: 15px;
-    background: var(--parch-dk); border: 1px solid var(--brown);
-    color: var(--ink); padding: 10px 12px; border-radius: 2px; outline: none;
-    resize: none; min-height: 80px; line-height: 1.5; -webkit-appearance: none;
-  }
-  .ob-prompt textarea::placeholder { color: var(--dimmed); font-style: italic; }
-  .ob-btn {
-    width: 100%; max-width: 380px; padding: 13px;
-    font-family: 'IM Fell English SC', serif; font-size: 14px; letter-spacing: 0.06em;
-    background: var(--ink-mid); color: var(--parch);
-    border: none; border-radius: 2px; cursor: pointer;
-  }
-  .ob-btn:active { background: var(--ink); }
-</style>
 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
 <script>eruda.init();</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=IM+Fell+English+SC&display=swap');
+:root {
+  --p:  #F2EAD8; --pd: #E8D9B8; --pp: #EDE0C4;
+  --ink: #1C1208; --im: #2A1A06;
+  --br: #8B6030; --bl: #C4A97A;
+  --red: #8B3020; --grn: #3A6B2A;
+  --mu: #5C3D1A; --di: #8B7355;
+  --sat: env(safe-area-inset-top,0px);
+  --sab: env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--p);font-family:'Crimson Pro',Georgia,serif;color:var(--ink)}
+#app{display:flex;flex-direction:column;height:100%;padding-top:var(--sat)}
+
+/* topbar */
+#topbar{background:var(--pd);border-bottom:1.5px solid var(--br);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+#app-title{font-family:'IM Fell English SC',serif;font-size:20px;color:var(--im)}
+#scribe-label{font-size:12px;font-style:italic;color:var(--di);display:flex;align-items:center;gap:6px}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--grn);flex-shrink:0}
+
+/* tabs */
+#tabs{display:flex;background:var(--pp);border-bottom:1px solid var(--bl);flex-shrink:0}
+.tab{flex:1;padding:10px 4px;text-align:center;font-family:'IM Fell English SC',serif;font-size:12px;letter-spacing:.04em;color:var(--di);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent}
+.tab.on{color:var(--im);border-bottom-color:var(--red)}
+
+/* panels */
+#panels{flex:1;overflow:hidden;position:relative}
+.panel{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;visibility:hidden}
+.panel.on{visibility:visible}
+
+/* ── CHAT ── */
+#msgs{flex:1;overflow-y:auto;padding:14px 14px 8px;display:flex;flex-direction:column;gap:12px;-webkit-overflow-scrolling:touch;background-image:repeating-linear-gradient(transparent,transparent 27px,#C4A97A33 27px,#C4A97A33 28px);background-size:100% 28px}
+.m{max-width:88%}.m.ai{align-self:flex-start}.m.me{align-self:flex-end}
+.ms{font-family:'IM Fell English SC',serif;font-size:10px;letter-spacing:.07em;color:var(--br);margin-bottom:3px;padding:0 2px}
+.m.me .ms{text-align:right;color:var(--di)}
+.mb{padding:9px 13px;font-size:15px;line-height:1.55;border-radius:2px}
+.m.ai .mb{background:var(--pd);border:1px solid var(--bl);border-top-left-radius:0}
+.m.me .mb{background:var(--im);color:var(--p);border-top-right-radius:0}
+.thinking{display:flex;gap:4px;padding:10px 13px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--di);animation:pu 1.2s ease-in-out infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes pu{0%,80%,100%{opacity:.3}40%{opacity:1}}
+
+/* chips */
+#chips{padding:8px 12px 6px;display:flex;gap:6px;overflow-x:auto;border-top:.5px solid var(--bl);background:var(--pp);flex-shrink:0;scrollbar-width:none}
+#chips::-webkit-scrollbar{display:none}
+.chip{font-family:'Crimson Pro',serif;font-size:13px;font-style:italic;padding:4px 11px;border:1px solid var(--br);color:var(--mu);border-radius:2px;background:var(--p);white-space:nowrap;cursor:pointer;flex-shrink:0}
+
+/* input */
+#irow{display:flex;gap:8px;padding:10px 12px;padding-bottom:calc(10px + var(--sab));border-top:1px solid var(--br);background:var(--pd);align-items:flex-end;flex-shrink:0}
+#inp{flex:1;font-family:'Crimson Pro',serif;font-size:15px;background:var(--p);border:1px solid var(--br);color:var(--ink);padding:8px 11px;border-radius:2px;resize:none;min-height:40px;max-height:110px;outline:none;line-height:1.5;-webkit-appearance:none}
+#inp::placeholder{color:var(--di);font-style:italic}
+#sbtn{width:40px;height:40px;background:var(--im);border:none;cursor:pointer;border-radius:2px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+#sbtn svg{width:16px;height:16px;stroke:var(--p);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── LEDGER ── */
+#ledger-panel{background:var(--p)}
+.ph{padding:12px 14px 8px;border-bottom:1px solid var(--bl);background:var(--pp);flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
+.pl{font-family:'IM Fell English SC',serif;font-size:11px;letter-spacing:.1em;color:var(--br)}
+#tlist{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.ti{padding:11px 14px;border-bottom:.5px solid var(--bl);display:flex;align-items:flex-start;gap:10px;cursor:pointer}
+.tc{width:18px;height:18px;border:1.5px solid var(--br);border-radius:2px;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center}
+.tc.dn{background:var(--im);border-color:var(--im)}
+.tc.dn::after{content:'✓';font-size:11px;color:var(--p)}
+.tn{font-size:15px;color:var(--ink);line-height:1.3}
+.tn.dn{text-decoration:line-through;color:var(--di)}
+.tm{display:flex;gap:8px;margin-top:3px;flex-wrap:wrap}
+.tg{font-size:11px;font-style:italic;color:var(--di)}
+.tg.urg{color:var(--red)}
+.empty{padding:40px 20px;text-align:center;font-size:14px;font-style:italic;color:var(--di);line-height:1.7}
+
+/* ── SOMEDAY ── */
+#someday-panel{background:var(--p)}
+#slist{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.si{padding:12px 14px;border-bottom:.5px solid var(--bl)}
+.sb{font-family:'IM Fell English SC',serif;font-size:9px;letter-spacing:.06em;color:var(--red);margin-bottom:2px}
+.sn{font-size:15px;color:var(--ink)}
+
+/* ── SETTINGS ── */
+#settings-panel{background:var(--p);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.ss{padding:16px 16px 8px;border-bottom:.5px solid var(--bl)}
+.sl{font-family:'IM Fell English SC',serif;font-size:10px;letter-spacing:.1em;color:var(--br);margin-bottom:10px}
+.sr{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.sr label{font-size:13px;font-style:italic;color:var(--mu)}
+.sr input,.sr textarea{font-family:'Crimson Pro',serif;font-size:14px;background:var(--pd);border:1px solid var(--bl);color:var(--ink);padding:8px 10px;border-radius:2px;outline:none;width:100%;-webkit-appearance:none}
+.sn2{font-size:12px;font-style:italic;color:var(--di);line-height:1.5;margin-top:4px}
+.svbtn{width:100%;padding:11px;font-family:'IM Fell English SC',serif;font-size:13px;letter-spacing:.05em;background:var(--im);color:var(--p);border:none;border-radius:2px;cursor:pointer;margin-top:4px}
+
+/* ── ONBOARDING ── */
+#ob{position:fixed;inset:0;background:var(--p);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;padding-top:calc(32px + var(--sat));padding-bottom:calc(32px + var(--sab));z-index:100}
+#ob.h{display:none}
+.oo{font-size:11px;color:var(--bl);letter-spacing:4px;margin-bottom:16px}
+.ot{font-family:'IM Fell English SC',serif;font-size:28px;color:var(--im);text-align:center;margin-bottom:6px}
+.os{font-size:15px;font-style:italic;color:var(--mu);text-align:center;margin-bottom:24px;line-height:1.6}
+.or{width:80px;height:1px;background:var(--bl);margin:0 auto 20px}
+.of{width:100%;max-width:380px;margin-bottom:16px}
+.of label{display:block;font-family:'IM Fell English SC',serif;font-size:11px;letter-spacing:.08em;color:var(--br);margin-bottom:5px}
+.of input,.of textarea{width:100%;font-family:'Crimson Pro',serif;font-size:16px;background:var(--pd);border:1px solid var(--br);color:var(--ink);padding:10px 12px;border-radius:2px;outline:none;-webkit-appearance:none}
+.of textarea{resize:none;min-height:72px;line-height:1.5}
+.of input::placeholder,.of textarea::placeholder{color:var(--di);font-style:italic}
+.obtn{width:100%;max-width:380px;padding:13px;font-family:'IM Fell English SC',serif;font-size:14px;letter-spacing:.06em;background:var(--im);color:var(--p);border:none;border-radius:2px;cursor:pointer}
+</style>
 </head>
 <body>
 
-<!-- Onboarding -->
-<div id="onboarding">
-  <div class="ob-ornament">✦ · ✦ · ✦</div>
-  <div class="ob-title">QuestLog</div>
-  <div class="ob-sub">Your personal companion.<br>Let's begin with one question.</div>
-  <div class="ob-rule"></div>
-  <div class="ob-step">
-    <label>Your name</label>
-    <input type="text" id="ob-name" placeholder="What shall I call you?" autocomplete="off" autocorrect="off">
-  </div>
-  <div class="ob-step">
-    <label>Name your Scribe</label>
-    <input type="text" id="ob-scribe" placeholder="Give your companion a name…" autocomplete="off" autocorrect="off">
-  </div>
-  <div class="ob-prompt">
-    <label>One thing rattling around in your head</label>
-    <textarea id="ob-task" placeholder="Something you haven't dealt with yet… anything at all." rows="3"></textarea>
-  </div>
-  <button class="ob-btn" onclick="finishOnboarding()">Begin the Chronicle ✦</button>
+<div id="ob">
+  <div class="oo">✦ · ✦ · ✦</div>
+  <div class="ot">QuestLog</div>
+  <div class="os">Your personal companion.<br>Let us begin with one question.</div>
+  <div class="or"></div>
+  <div class="of"><label>Your name</label><input id="ob1" type="text" placeholder="What shall I call you?" autocomplete="off" autocorrect="off"></div>
+  <div class="of"><label>Name your Scribe</label><input id="ob2" type="text" placeholder="Give your companion a name…" autocomplete="off" autocorrect="off"></div>
+  <div class="of"><label>One thing rattling around in your head</label><textarea id="ob3" placeholder="Something you haven't dealt with yet…" rows="3"></textarea></div>
+  <button class="obtn" onclick="finishOb()">Begin the Chronicle ✦</button>
 </div>
 
-<!-- App -->
 <div id="app">
   <div id="topbar">
     <div id="app-title">✦ QuestLog</div>
-    <div id="scribe-status"><div class="status-dot" id="status-dot"></div><span id="scribe-name-display">The Scribe</span></div>
+    <div id="scribe-label"><div class="sdot"></div><span id="sname">The Scribe</span></div>
   </div>
   <div id="tabs">
-    <button class="tab active" onclick="switchTab('chat', this)">The Scribe</button>
-    <button class="tab" onclick="switchTab('task', this)">Ledger</button>
-    <button class="tab" onclick="switchTab('someday', this)">Someday</button>
-    <button class="tab" onclick="switchTab('settings', this)">Settings</button>
+    <button class="tab on" onclick="goTab('chat',this)">The Scribe</button>
+    <button class="tab" onclick="goTab('ledger',this)">Ledger</button>
+    <button class="tab" onclick="goTab('someday',this)">Someday</button>
+    <button class="tab" onclick="goTab('settings',this)">Settings</button>
   </div>
   <div id="panels">
 
-    <!-- Chat panel -->
-    <div class="panel active" id="chat-panel">
-      <div id="messages"></div>
+    <div class="panel on" id="chat-panel">
+      <div id="msgs"></div>
       <div id="chips">
-        <div class="chip" onclick="fillInput('I have 20 minutes and low energy — what should I do?')">20 min, low energy</div>
-        <div class="chip" onclick="fillInput('What is most urgent right now?')">what\'s urgent?</div>
-        <div class="chip" onclick="fillInput('I need to do a brain dump — lots swirling')">brain dump</div>
-        <div class="chip" onclick="fillInput('Mark my last task as done')">mark done</div>
-        <div class="chip" onclick="fillInput('Break down my biggest task into steps')">break it down</div>
+        <div class="chip" onclick="fill('I have 20 minutes and low energy — what should I do?')">20 min, low energy</div>
+        <div class="chip" onclick="fill('What is most urgent right now?')">what\'s urgent?</div>
+        <div class="chip" onclick="fill('I need to do a brain dump')">brain dump</div>
+        <div class="chip" onclick="fill('Break down my biggest task into steps')">break it down</div>
       </div>
-      <div id="input-row">
-        <textarea id="msg-input" placeholder="Speak your mind…" rows="1"
-          oninput="autoResize(this)"
-          onkeydown="handleKey(event)"></textarea>
-        <button id="send-btn" onclick="sendMsg()" aria-label="Send">
-          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        </button>
+      <div id="irow">
+        <textarea id="inp" placeholder="Speak your mind…" rows="1" oninput="rsz(this)" onkeydown="kd(event)"></textarea>
+        <button id="sbtn" onclick="send()" aria-label="Send"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
       </div>
     </div>
 
-    <!-- Tasks panel -->
-    <div class="panel" id="task-panel">
-      <div class="panel-head">
-        <div class="panel-label">Your Ledger</div>
-        <button class="add-btn" onclick="switchTab('chat', document.querySelectorAll('.tab')[0]); setTimeout(()=>document.getElementById('msg-input').focus(), 200)">+ Add via Scribe</button>
-      </div>
-      <div id="task-filters">
-        <button class="filter-btn active" onclick="filterTasks('all', this)">All</button>
-        <button class="filter-btn" onclick="filterTasks('active', this)">Active</button>
-        <button class="filter-btn" onclick="filterTasks('urgent', this)">Urgent</button>
-        <button class="filter-btn" onclick="filterTasks('done', this)">Done</button>
-      </div>
-      <div id="task-list"></div>
+    <div class="panel" id="ledger-panel">
+      <div class="ph"><div class="pl">Your Ledger</div></div>
+      <div id="tlist"></div>
     </div>
 
-    <!-- Someday panel -->
     <div class="panel" id="someday-panel">
-      <div class="panel-head">
-        <div class="panel-label">The Someday Space</div>
-      </div>
-      <div id="someday-list"></div>
+      <div class="ph"><div class="pl">The Someday Space</div></div>
+      <div id="slist"></div>
     </div>
 
-    <!-- Settings panel -->
     <div class="panel" id="settings-panel">
-      <div class="settings-section">
-        <div class="settings-label">Your Details</div>
-        <div class="settings-row">
-          <label>Your name</label>
-          <input type="text" id="set-name" autocomplete="off">
-        </div>
-        <div class="settings-row">
-          <label>Your Scribe's name</label>
-          <input type="text" id="set-scribe" autocomplete="off">
-        </div>
+      <div class="ss">
+        <div class="sl">Your Details</div>
+        <div class="sr"><label>Your name</label><input type="text" id="s1" autocomplete="off"></div>
+        <div class="sr"><label>Scribe name</label><input type="text" id="s2" autocomplete="off"></div>
       </div>
-      <div class="settings-section">
-        <div class="settings-label">AI Connection</div>
-        <div class="settings-row">
-          <label>Anthropic API key</label>
-          <input type="password" id="set-apikey" placeholder="sk-ant-…" autocomplete="off" autocorrect="off" spellcheck="false">
-        </div>
-        <div class="settings-note">Your key is stored only on this device. It never leaves your browser except to call Anthropic directly.</div>
+      <div class="ss">
+        <div class="sl">AI Connection</div>
+        <div class="sr"><label>Anthropic API key</label><input type="password" id="s3" placeholder="sk-ant-…" autocomplete="off" spellcheck="false"></div>
+        <div class="sn2">Stored on your device only. Never shared.</div>
       </div>
-      <div class="settings-section">
-        <div class="settings-label">Supabase Connection</div>
-        <div class="settings-row">
-          <label>Project URL</label>
-          <input type="text" id="set-sb-url" placeholder="https://xxxx.supabase.co" autocorrect="off" spellcheck="false">
-        </div>
-        <div class="settings-row">
-          <label>Anon key</label>
-          <input type="password" id="set-sb-key" placeholder="eyJ…" autocomplete="off" autocorrect="off" spellcheck="false">
-        </div>
-        <div class="settings-note">Found in your Supabase project under Settings → API.</div>
+      <div class="ss">
+        <div class="sl">Supabase</div>
+        <div class="sr"><label>Project URL</label><input type="text" id="s4" autocorrect="off" spellcheck="false"></div>
+        <div class="sr"><label>Anon key</label><input type="password" id="s5" autocomplete="off" spellcheck="false"></div>
       </div>
-      <div class="settings-section">
-        <button class="save-btn" onclick="saveSettings()">Save Settings</button>
-      </div>
+      <div class="ss"><button class="svbtn" onclick="saveCfg()">Save Settings</button></div>
     </div>
 
   </div>
 </div>
 
 <script>
-// ── Config ────────────────────────────────────────────────────────────────────
-// PASTE YOUR KEYS HERE after setup (or enter them in Settings)
-const DEFAULT_SB_URL = "https://vsuaozczglydhxtxuero.supabase.co";
-const DEFAULT_SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdWFvemN6Z2x5ZGh4dHh1ZXJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMzM1MzgsImV4cCI6MjA5NzkwOTUzOH0.FZNeVE9A8Kae7FYn6lkejxKngbSub1zqHyoFG2F7v8M";
-const DEFAULT_API_KEY = "";
+// ── Config ─────────────────────────────────────────────────────────────────
+const SB_URL = "https://vsuaozczglydhxtxuero.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdWFvemN6Z2x5ZGh4dHh1ZXJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMzM1MzgsImV4cCI6MjA5NzkwOTUzOH0.FZNeVE9A8Kae7FYn6lkejxKngbSub1zqHyoFG2F7v8M";
 
-// ── State ─────────────────────────────────────────────────────────────────────
-let cfg = {
-  userName: "",
-  scribeName: "the Scribe",
-  apiKey: DEFAULT_API_KEY,
-  sbUrl: DEFAULT_SB_URL,
-  sbKey: DEFAULT_SB_KEY,
+let C = {
+  name: '', scribe: 'the Scribe', apiKey: '', sbUrl: SB_URL, sbKey: SB_KEY
 };
-let tasks = [];
-let somedayItems = [];
-let history = [];
-let currentFilter = 'all';
 
-// ── Persistence (localStorage) ────────────────────────────────────────────────
+function lsGet(k, def) { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch { return def; } }
+function lsSet(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+
 function loadCfg() {
-  const saved = localStorage.getItem('ql_cfg');
-  if (saved) cfg = { ...cfg, ...JSON.parse(saved) };
+  const s = lsGet('ql_cfg', {});
+  C = { ...C, ...s };
+  if (!C.sbUrl) C.sbUrl = SB_URL;
+  if (!C.sbKey) C.sbKey = SB_KEY;
 }
+
 function saveCfg() {
-  localStorage.setItem('ql_cfg', JSON.stringify(cfg));
-}
-function isOnboarded() {
-  return !!localStorage.getItem('ql_onboarded');
-}
-function markOnboarded() {
-  localStorage.setItem('ql_onboarded', '1');
-}
-
-// ── Supabase ──────────────────────────────────────────────────────────────────
-function sbHeaders(extra = {}) {
-  return {
-    'apikey': cfg.sbKey,
-    'Authorization': `Bearer ${cfg.sbKey}`,
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'Prefer': 'return=representation',
-    ...extra
-  };
+  C.name  = document.getElementById('s1').value.trim();
+  C.scribe = document.getElementById('s2').value.trim() || 'the Scribe';
+  C.apiKey = document.getElementById('s3').value.trim();
+  C.sbUrl  = document.getElementById('s4').value.trim().replace(/\/$/, '') || SB_URL;
+  C.sbKey  = document.getElementById('s5').value.trim() || SB_KEY;
+  lsSet('ql_cfg', C);
+  document.getElementById('sname').textContent = C.scribe;
+  alert('Saved.');
 }
 
-async function sbSelect(path) {
-  if (!cfg.sbUrl || !cfg.sbKey) return null;
-  try {
-    const res = await fetch(`${cfg.sbUrl}/rest/v1${path}`, {
-      method: 'GET',
-      headers: {
-        'apikey': cfg.sbKey,
-        'Authorization': `Bearer ${cfg.sbKey}`,
-        'Accept': 'application/json'
-      }
-    });
-    console.log('SELECT status:', res.status);
-    if (!res.ok) {
-      const err = await res.text();
-      console.log('SELECT error:', err);
-      return null;
-    }
-    return await res.json();
-  } catch(e) {
-    console.log('SELECT exception:', e);
-    return null;
-  }
+function fillSettings() {
+  document.getElementById('s1').value = C.name;
+  document.getElementById('s2').value = C.scribe;
+  document.getElementById('s3').value = C.apiKey;
+  document.getElementById('s4').value = C.sbUrl;
+  document.getElementById('s5').value = C.sbKey;
 }
 
-async function sbFetch(path, method = 'GET', body = null) {
-  if (!cfg.sbUrl || !cfg.sbKey) { console.log('No Supabase config'); return null; }
-  const res = await fetch(`${cfg.sbUrl}/rest/v1${path}`, {
-    method,
-    headers: sbHeaders(),
-    body: body ? JSON.stringify(body) : null
-  });
-  const text = await res.text();
-  console.log('Supabase', method, path, res.status, text.substring(0, 200));
-  if (!res.ok) return null;
-  return text ? JSON.parse(text) : [];
+// ── Supabase ───────────────────────────────────────────────────────────────
+function sbH() {
+  return { 'apikey': C.sbKey, 'Authorization': 'Bearer ' + C.sbKey, 'Content-Type': 'application/json', 'Accept': 'application/json', 'Prefer': 'return=representation' };
 }
 
-async function loadTasks() {
-  console.log('loadTasks called, url:', cfg.sbUrl);
-  const data = await sbSelect('/tasks?order=created_at.asc');
-  if (Array.isArray(data)) {
-    console.log('Got', data.length, 'tasks from Supabase');
-    tasks = data.filter(t => !t.someday);
-    somedayItems = data.filter(t => t.someday);
-    console.log('Regular:', tasks.length, 'Someday:', somedayItems.length);
-  } else {
-    console.log('No data from Supabase, tasks array:', data);
-    tasks = [];
-    somedayItems = [];
-  }
+async function dbGet() {
+  const r = await fetch(C.sbUrl + '/rest/v1/tasks?order=created_at.asc', { headers: sbH() });
+  console.log('dbGet status', r.status);
+  if (!r.ok) { console.log('dbGet error', await r.text()); return []; }
+  return await r.json();
+}
+
+async function dbInsert(row) {
+  const payload = { name: row.name, energy: row.energy||'medium', minutes: row.minutes||15, done: !!row.done, urgent: !!row.urgent, tier: row.tier||'task', someday: !!row.someday, notes: row.notes||null };
+  const r = await fetch(C.sbUrl + '/rest/v1/tasks', { method: 'POST', headers: sbH(), body: JSON.stringify(payload) });
+  console.log('dbInsert status', r.status, row.name);
+  const txt = await r.text();
+  if (!r.ok) { console.log('dbInsert error', txt); return null; }
+  return JSON.parse(txt)[0] || null;
+}
+
+async function dbPatch(id, updates) {
+  const r = await fetch(C.sbUrl + '/rest/v1/tasks?id=eq.' + id, { method: 'PATCH', headers: sbH(), body: JSON.stringify(updates) });
+  console.log('dbPatch status', r.status);
+}
+
+// ── State ──────────────────────────────────────────────────────────────────
+let tasks = [];
+let somedays = [];
+let history = [];
+
+async function loadAll() {
+  const rows = await dbGet();
+  tasks    = rows.filter(r => !r.someday);
+  somedays = rows.filter(r =>  r.someday);
+  console.log('tasks:', tasks.length, 'somedays:', somedays.length);
   renderTasks();
   renderSomeday();
 }
 
-async function saveTask(task) {
-  task.id = task.id || crypto.randomUUID();
-  console.log('Saving task:', task.name, 'someday:', task.someday);
-  try {
-    const payload = {
-      name: task.name,
-      energy: task.energy || 'medium',
-      minutes: task.minutes || 15,
-      done: task.done || false,
-      urgent: task.urgent || false,
-      tier: task.tier || 'task',
-      someday: task.someday || false,
-      notes: task.notes || null
-    };
-    const data = await sbFetch('/tasks', 'POST', payload);
-    if (data && data[0]) {
-      task.id = data[0].id;
-      console.log('Saved to Supabase:', task.name, 'id:', task.id);
-    } else {
-      console.log('Supabase returned no data for:', task.name);
-    }
-  } catch(e) {
-    console.log('Supabase save error:', e);
-  }
-}
+// ── Render ─────────────────────────────────────────────────────────────────
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-async function updateTask(id, updates) {
-  await sbFetch(`/tasks?id=eq.${id}`, 'PATCH', updates);
-  const local = JSON.parse(localStorage.getItem('ql_tasks') || '[]');
-  const idx = local.findIndex(t => t.id === id);
-  if (idx >= 0) { local[idx] = { ...local[idx], ...updates }; localStorage.setItem('ql_tasks', JSON.stringify(local)); }
-}
-
-// ── Render tasks ──────────────────────────────────────────────────────────────
 function renderTasks() {
-  const list = document.getElementById('task-list');
-  let filtered = tasks;
-  if (currentFilter === 'active') filtered = tasks.filter(t => !t.done && !t.someday);
-  if (currentFilter === 'urgent') filtered = tasks.filter(t => t.urgent && !t.done);
-  if (currentFilter === 'done') filtered = tasks.filter(t => t.done);
-
-  if (!filtered.length) {
-    list.innerHTML = `<div class="empty-state">No tasks here yet.<br>Tell the Scribe what's on your mind.</div>`;
-    return;
-  }
-  list.innerHTML = filtered.map(t => `
-    <div class="task-item" onclick="toggleTask('${t.id}')">
-      <div class="task-check ${t.done ? 'done' : ''}"></div>
-      <div class="task-body">
-        <div class="task-name ${t.done ? 'done' : ''}">${t.urgent && !t.done ? '⚡ ' : ''}${escHtml(t.name)}</div>
-        <div class="task-meta">
-          ${t.energy ? `<span class="tag ${t.energy === 'low' ? 'low' : t.energy === 'high' ? 'urgent' : ''}">${t.energy} energy</span>` : ''}
-          ${t.minutes ? `<span class="tag">~${t.minutes} min</span>` : ''}
-          ${t.tier && t.tier !== 'task' ? `<span class="tier-badge">${t.tier}</span>` : ''}
+  const el = document.getElementById('tlist');
+  if (!tasks.length) { el.innerHTML = '<div class="empty">No tasks yet.<br>Tell the Scribe what\'s on your mind.</div>'; return; }
+  el.innerHTML = tasks.map(t => `
+    <div class="ti" onclick="toggle('${t.id}')">
+      <div class="tc ${t.done?'dn':''}"></div>
+      <div>
+        <div class="tn ${t.done?'dn':''}">${t.urgent&&!t.done?'⚡ ':''}${esc(t.name)}</div>
+        <div class="tm">
+          ${t.energy?`<span class="tg ${t.energy==='high'?'urg':''}">${t.energy} energy</span>`:''}
+          ${t.minutes?`<span class="tg">~${t.minutes} min</span>`:''}
         </div>
       </div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 function renderSomeday() {
-  const list = document.getElementById('someday-list');
-  if (!somedayItems.length) {
-    list.innerHTML = `<div class="empty-state">Your Someday Space is empty.<br>Dreams, shelved projects, and things<br>worth revisiting live here.</div>`;
-    return;
-  }
-  list.innerHTML = somedayItems.map(t => `
-    <div class="someday-item">
-      <div class="someday-bucket">· Dream ·</div>
-      <div class="someday-name">${escHtml(t.name)}</div>
-    </div>
-  `).join('');
+  const el = document.getElementById('slist');
+  if (!somedays.length) { el.innerHTML = '<div class="empty">Your Someday Space is empty.<br>Dreams and shelved projects live here.</div>'; return; }
+  el.innerHTML = somedays.map(t => `
+    <div class="si">
+      <div class="sb">· Someday ·</div>
+      <div class="sn">${esc(t.name)}</div>
+    </div>`).join('');
 }
 
-async function toggleTask(id) {
-  const task = tasks.find(t => t.id === id);
-  if (!task) return;
-  const newDone = !task.done;
-  task.done = newDone;
+async function toggle(id) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+  t.done = !t.done;
   renderTasks();
-  await updateTask(id, { done: newDone });
-  if (newDone) {
-    addAiMsg(`${task.name} — marked complete. A small deed, but real. The ledger notes it.`);
-  }
+  await dbPatch(id, { done: t.done });
+  if (t.done) addAI(`${esc(t.name)} — marked complete. A small deed, but real.`);
 }
 
-function filterTasks(filter, btn) {
-  currentFilter = filter;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  renderTasks();
-}
-
-function escHtml(str) {
-  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// ── Chat ──────────────────────────────────────────────────────────────────────
+// ── Chat ───────────────────────────────────────────────────────────────────
 function addMsg(role, text) {
-  const msgs = document.getElementById('messages');
-  const div = document.createElement('div');
-  div.className = `msg ${role}`;
-  const sender = role === 'user' ? cfg.userName || 'You' : cfg.scribeName || 'The Scribe';
-  div.innerHTML = `<div class="msg-sender">${escHtml(sender)}</div><div class="bubble">${text.replace(/\n/g,'<br>')}</div>`;
-  msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
-  return div;
+  const el = document.getElementById('msgs');
+  const d = document.createElement('div');
+  d.className = 'm ' + (role === 'me' ? 'me' : 'ai');
+  const who = role === 'me' ? (C.name||'You') : (C.scribe||'The Scribe');
+  d.innerHTML = `<div class="ms">${esc(who)}</div><div class="mb">${text.replace(/\n/g,'<br>')}</div>`;
+  el.appendChild(d);
+  el.scrollTop = el.scrollHeight;
 }
-
-function addAiMsg(text) {
-  return addMsg('ai', text);
-}
+function addAI(t) { addMsg('ai', t); }
 
 function showThinking() {
-  const msgs = document.getElementById('messages');
-  const div = document.createElement('div');
-  div.className = 'msg ai'; div.id = 'thinking';
-  div.innerHTML = `<div class="msg-sender">${escHtml(cfg.scribeName || 'The Scribe')}</div><div class="bubble"><div class="thinking"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
-  msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
+  const el = document.getElementById('msgs');
+  const d = document.createElement('div');
+  d.className = 'm ai'; d.id = 'th';
+  d.innerHTML = `<div class="ms">${esc(C.scribe||'The Scribe')}</div><div class="mb"><div class="thinking"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+  el.appendChild(d); el.scrollTop = el.scrollHeight;
 }
 
-function buildSystem() {
-  const taskSummary = tasks.filter(t => !t.done).map(t => `- ${t.name} (${t.energy || 'medium'} energy, ${t.minutes || '?'} min${t.urgent ? ', URGENT' : ''})`).join('\n') || 'No active tasks yet.';
-  return `You are ${cfg.scribeName || 'the Scribe'}, a warm, witty, honest personal companion for ${cfg.userName || 'the user'}. You help them manage their life — tasks, projects, priorities — through natural conversation.
+function sysPrompt() {
+  const tl = tasks.filter(t=>!t.done).map(t=>`- ${t.name} (${t.energy||'medium'} energy, ${t.minutes||'?'} min${t.urgent?', URGENT':''})`).join('\n') || 'No active tasks.';
+  return `You are ${C.scribe||'the Scribe'}, a warm, honest, witty personal companion for ${C.name||'the user'}. Help them manage their life through natural conversation.
 
-Your personality: warm but not saccharine. A little dry wit. Honest enough to name what needs naming. You speak sparingly and with purpose. You use slightly literary language but stay clear and readable. You are never a cheerleader. You never lecture.
+Personality: warm not saccharine, dry wit, honest, speaks sparingly and with purpose, slightly literary but always clear.
 
-Current active tasks:
-${taskSummary}
+Current tasks:
+${tl}
 
-Respond ONLY with a JSON object in this exact shape — no other text, no markdown fences:
-{
-  "message": "your conversational reply in the Scribe's voice",
-  "tasks": [
-    { "name": "task name", "energy": "low|medium|high", "minutes": 15, "done": false, "urgent": false, "tier": "task|project|epic", "someday": false }
-  ],
-  "completedTaskNames": ["exact task name if user said they completed something"]
-}
+Respond ONLY with valid JSON — no markdown, no extra text:
+{"message":"your reply","tasks":[{"name":"","energy":"low|medium|high","minutes":15,"done":false,"urgent":false,"tier":"task|project|epic","someday":false}],"completedNames":["name of completed task if user said they finished one"]}
 
 Rules:
-- Include the COMPLETE updated task list every time — all existing tasks plus any new ones
-- For someday items (dreams, far-future wishes, shelved projects) set someday: true
-- tier: "task" = single doable thing, "project" = multiple steps needed, "epic" = huge/long-term
-- If user asks what to do, pick ONE specific task. Be decisive. Match their energy and time.
-- If a task is actually a project, note it and offer to break it down
-- completedTaskNames: only populate if user explicitly said they finished something
-- Keep message warm, brief, ADHD-friendly. No bullet walls.
-- Never invent tasks the user did not mention.`;
+- Return complete updated task list every time
+- someday:true for dreams, far-future wishes, shelved big projects
+- If user asks what to do, pick ONE task decisively
+- Keep message ADHD-friendly — brief, warm, no bullet walls
+- Never invent tasks the user did not mention`;
 }
 
-async function sendMsg() {
-  const input = document.getElementById('msg-input');
-  const text = input.value.trim();
-  if (!text) return;
-
-  input.value = '';
-  input.style.height = 'auto';
-  addMsg('user', text);
-  history.push({ role: 'user', content: text });
+async function send() {
+  const inp = document.getElementById('inp');
+  const txt = inp.value.trim();
+  if (!txt) return;
+  inp.value = ''; inp.style.height = 'auto';
+  addMsg('me', txt);
+  history.push({ role: 'user', content: txt });
   showThinking();
 
-  if (!cfg.apiKey) {
-    document.getElementById('thinking')?.remove();
-    addAiMsg("The Scribe's quill is dry — no API key found. Visit Settings to add your Anthropic key.");
+  if (!C.apiKey) {
+    document.getElementById('th')?.remove();
+    addAI("The Scribe's quill is dry — add your Anthropic API key in Settings.");
     return;
   }
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': cfg.apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        system: buildSystem(),
-        messages: history
-      })
+      headers: { 'Content-Type': 'application/json', 'x-api-key': C.apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, system: sysPrompt(), messages: history })
     });
-
     const data = await res.json();
-    document.getElementById('thinking')?.remove();
-
-    if (data.error) {
-      addAiMsg(`The Scribe encountered an error: ${data.error.message}`);
-      return;
-    }
+    document.getElementById('th')?.remove();
+    if (data.error) { addAI('Error: ' + data.error.message); return; }
 
     const raw = data.content?.[0]?.text || '{}';
     history.push({ role: 'assistant', content: raw });
 
-    let parsed;
-    try { parsed = JSON.parse(raw.replace(/```json|```/g, '').trim()); }
-    catch(e) { parsed = { message: raw, tasks: tasks }; }
+    let p;
+    try { p = JSON.parse(raw.replace(/```json|```/g,'').trim()); }
+    catch(e) { addAI(raw); return; }
 
-    if (parsed.message) addAiMsg(parsed.message);
+    if (p.message) addAI(p.message);
 
-    if (Array.isArray(parsed.tasks) && parsed.tasks.length) {
-      const regularTasks = parsed.tasks.filter(pt => !pt.someday);
-      const somedayTasks = parsed.tasks.filter(pt => pt.someday);
-
-      for (const nt of regularTasks) {
-        const exists = tasks.some(t => t.name.toLowerCase() === nt.name.toLowerCase());
-        if (!exists) {
-          const task = { ...nt, done: false, someday: false, id: null };
-          tasks.push(task);
-          await saveTask(task);
-        }
-      }
-
-      for (const ns of somedayTasks) {
-        const exists = somedayItems.some(s => s.name.toLowerCase() === ns.name.toLowerCase());
-        if (!exists) {
-          const item = { ...ns, someday: true, id: null };
-          somedayItems.push(item);
-          await saveTask(item);
-        }
-      }
-
-      if (Array.isArray(parsed.completedTaskNames)) {
-        for (const name of parsed.completedTaskNames) {
-          const task = tasks.find(t => t.name.toLowerCase().includes(name.toLowerCase()));
-          if (task && !task.done) {
-            task.done = true;
-            if (task.id) await updateTask(task.id, { done: true });
+    if (Array.isArray(p.tasks)) {
+      for (const pt of p.tasks) {
+        if (pt.someday) {
+          const exists = somedays.some(s => s.name.toLowerCase() === pt.name.toLowerCase());
+          if (!exists) {
+            const row = await dbInsert({ ...pt, someday: true });
+            if (row) somedays.push(row);
+          }
+        } else {
+          const exists = tasks.some(t => t.name.toLowerCase() === pt.name.toLowerCase());
+          if (!exists) {
+            const row = await dbInsert({ ...pt, someday: false });
+            if (row) tasks.push(row);
           }
         }
       }
-
-      await loadTasks();
+      if (Array.isArray(p.completedNames)) {
+        for (const n of p.completedNames) {
+          const t = tasks.find(x => x.name.toLowerCase().includes(n.toLowerCase()));
+          if (t && !t.done) { t.done = true; if (t.id) await dbPatch(t.id, { done: true }); }
+        }
+      }
+      renderTasks();
+      renderSomeday();
     }
   } catch(e) {
-    document.getElementById('thinking')?.remove();
-    addAiMsg("Something went awry reaching the Scribe. Check your connection and try again.");
+    document.getElementById('th')?.remove();
+    addAI('Something went wrong. Try again.');
+    console.log('send error', e);
   }
 }
 
-// ── Onboarding ────────────────────────────────────────────────────────────────
-async function finishOnboarding() {
-  const name = document.getElementById('ob-name').value.trim();
-  const scribe = document.getElementById('ob-scribe').value.trim();
-  const firstTask = document.getElementById('ob-task').value.trim();
-
-  if (!name) { document.getElementById('ob-name').focus(); return; }
-  if (!scribe) { document.getElementById('ob-scribe').value = 'Aldric'; }
-
-  cfg.userName = name;
-  cfg.scribeName = scribe || 'Aldric';
-  saveCfg();
-  markOnboarded();
-  document.getElementById('onboarding').classList.add('hidden');
-  document.getElementById('scribe-name-display').textContent = cfg.scribeName;
-  populateSettings();
-
-  addAiMsg(`Well met, ${cfg.userName}. I am ${cfg.scribeName} — your Scribe, your companion, your keeper of ledgers. I will learn who you are by being with you. No forms to fill, no systems to configure. Just tell me what is on your mind.`);
-
-  if (firstTask) {
-    setTimeout(() => {
-      document.getElementById('msg-input').value = firstTask;
-      sendMsg();
-    }, 800);
-  }
+// ── Tabs ───────────────────────────────────────────────────────────────────
+function goTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  document.getElementById(name + '-panel').classList.add('on');
+  if (name === 'ledger' || name === 'someday') loadAll();
 }
 
-// ── Settings ──────────────────────────────────────────────────────────────────
-function populateSettings() {
-  document.getElementById('set-name').value = cfg.userName || '';
-  document.getElementById('set-scribe').value = cfg.scribeName || '';
-  document.getElementById('set-apikey').value = cfg.apiKey || '';
-  document.getElementById('set-sb-url').value = cfg.sbUrl || '';
-  document.getElementById('set-sb-key').value = cfg.sbKey || '';
+// ── Onboarding ─────────────────────────────────────────────────────────────
+function finishOb() {
+  const name   = document.getElementById('ob1').value.trim();
+  const scribe = document.getElementById('ob2').value.trim() || 'Aldric';
+  const first  = document.getElementById('ob3').value.trim();
+  if (!name) { document.getElementById('ob1').focus(); return; }
+  C.name = name; C.scribe = scribe;
+  lsSet('ql_cfg', C);
+  lsSet('ql_ob', 1);
+  document.getElementById('ob').classList.add('h');
+  document.getElementById('sname').textContent = C.scribe;
+  fillSettings();
+  addAI(`Well met, ${esc(C.name)}. I am ${esc(C.scribe)} — your Scribe, your companion. Tell me what is on your mind and we shall begin.`);
+  if (first) setTimeout(() => { document.getElementById('inp').value = first; send(); }, 600);
 }
 
-function saveSettings() {
-  cfg.userName = document.getElementById('set-name').value.trim();
-  cfg.scribeName = document.getElementById('set-scribe').value.trim() || 'the Scribe';
-  cfg.apiKey = document.getElementById('set-apikey').value.trim();
-  cfg.sbUrl = document.getElementById('set-sb-url').value.trim().replace(/\/$/, '');
-  cfg.sbKey = document.getElementById('set-sb-key').value.trim();
-  saveCfg();
-  document.getElementById('scribe-name-display').textContent = cfg.scribeName;
-  alert('Settings saved. The Scribe is updated.');
-  loadTasks();
-}
+// ── Helpers ────────────────────────────────────────────────────────────────
+function fill(t) { const i = document.getElementById('inp'); i.value = t; i.focus(); rsz(i); }
+function rsz(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 110) + 'px'; }
+function kd(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
 
-// ── Tab switching ─────────────────────────────────────────────────────────────
-function switchTab(name, btn) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  const panel = document.getElementById(`${name}-panel`);
-  if (panel) {
-    panel.classList.add('active');
-    if (name === 'task' || name === 'someday') loadTasks();
-  } else {
-    console.log('Panel not found:', name + '-panel');
-  }
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function fillInput(text) {
-  const inp = document.getElementById('msg-input');
-  inp.value = text; inp.focus(); autoResize(inp);
-}
-
-function autoResize(el) {
-  el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 110) + 'px';
-}
-
-function handleKey(e) {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
-}
-
-// ── Init ──────────────────────────────────────────────────────────────────────
+// ── Init ───────────────────────────────────────────────────────────────────
 loadCfg();
-populateSettings();
-
-if (!isOnboarded()) {
-  document.getElementById('onboarding').classList.remove('hidden');
-} else {
-  document.getElementById('onboarding').classList.add('hidden');
-  document.getElementById('scribe-name-display').textContent = cfg.scribeName || 'The Scribe';
-  addAiMsg(`Welcome back, ${cfg.userName || 'adventurer'}. What needs attending to today?`);
-  loadTasks();
+fillSettings();
+if (lsGet('ql_ob', 0)) {
+  document.getElementById('ob').classList.add('h');
+  document.getElementById('sname').textContent = C.scribe;
+  addAI(`Welcome back, ${esc(C.name||'adventurer')}. What needs attending to today?`);
+  loadAll();
 }
 </script>
-
 </body>
 </html>
