@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="QuestLog">
+<meta name="theme-color" content="#F2EAD8">
+<title>QuestLog</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400;1,600&family=IM+Fell+English+SC&display=swap');
+
+  :root {
+    --parch:    #F2EAD8;
+    --parch-dk: #E8D9B8;
+    --parch-dp: #EDE0C4;
+    --ink:      #1C1208;
+    --ink-mid:  #2A1A06;
+    --brown:    #8B6030;
+    --brown-lt: #C4A97A;
+    --red:      #8B3020;
+    --green:    #3A6B2A;
+    --muted:    #5C3D1A;
+    --dimmed:   #8B7355;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bot: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; background: var(--parch); font-family: 'Crimson Pro', Georgia, serif; color: var(--ink); }
+
+  /* ── App shell ── */
+  #app { display: flex; flex-direction: column; height: 100%; padding-top: var(--safe-top); }
+
+  /* ── Top bar ── */
+  #topbar {
+    background: var(--parch-dk);
+    border-bottom: 1.5px solid var(--brown);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  #app-title { font-family: 'IM Fell English SC', serif; font-size: 20px; color: var(--ink-mid); letter-spacing: 0.03em; }
+  #scribe-status { display: flex; align-items: center; gap: 6px; font-size: 12px; font-style: italic; color: var(--dimmed); }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); border: 1px solid #2a5020; flex-shrink: 0; }
+  .status-dot.offline { background: var(--dimmed); border-color: var(--brown); }
+
+  /* ── Tab bar ── */
+  #tabs {
+    display: flex;
+    background: var(--parch-dp);
+    border-bottom: 1px solid var(--brown-lt);
+    flex-shrink: 0;
+  }
+  .tab {
+    flex: 1;
+    padding: 10px 4px;
+    text-align: center;
+    font-family: 'IM Fell English SC', serif;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    color: var(--dimmed);
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .tab.active { color: var(--ink-mid); border-bottom-color: var(--red); }
+
+  /* ── Panels ── */
+  #panels { flex: 1; overflow: hidden; position: relative; }
+  .panel { position: absolute; inset: 0; display: flex; flex-direction: column; overflow: hidden; opacity: 0; pointer-events: none; transition: opacity 0.15s; }
+  .panel.active { opacity: 1; pointer-events: all; }
+
+  /* ── PANEL: Chat ── */
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 14px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background-image: repeating-linear-gradient(transparent, transparent 27px, #C4A97A33 27px, #C4A97A33 28px);
+    background-size: 100% 28px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .msg { max-width: 88%; }
+  .msg.ai { align-self: flex-start; }
+  .msg.user { align-self: flex-end; }
+  .msg-sender { font-family: 'IM Fell English SC', serif; font-size: 10px; letter-spacing: 0.07em; color: var(--brown); margin-bottom: 3px; padding: 0 2px; }
+  .msg.user .msg-sender { text-align: right; color: var(--dimmed); }
+  .bubble { padding: 9px 13px; font-size: 15px; line-height: 1.55; border-radius: 2px; }
+  .msg.ai .bubble { background: var(--parch-dk); border: 1px solid var(--brown-lt); color: var(--ink); border-top-left-radius: 0; }
+  .msg.user .bubble { background: var(--ink-mid); color: var(--parch); border: 1px solid var(--ink); border-top-right-radius: 0; }
+  .divider { text-align: center; font-size: 11px; font-style: italic; color: var(--dimmed); padding: 4px 0; position: relative; }
+  .divider::before, .divider::after { content: ''; position: absolute; top: 50%; height: 0.5px; background: var(--brown-lt); width: 30%; }
+  .divider::before { left: 8px; } .divider::after { right: 8px; }
+  .thinking { display: flex; gap: 4px; align-items: center; padding: 10px 13px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--dimmed); animation: pulse 1.2s ease-in-out infinite; }
+  .dot:nth-child(2) { animation-delay: 0.2s; } .dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulse { 0%,80%,100% { opacity: 0.3; } 40% { opacity: 1; } }
+
+  /* Quick chips */
+  #chips { padding: 8px 12px 6px; display: flex; gap: 6px; overflow-x: auto; border-top: 0.5px solid var(--brown-lt); background: var(--parch-dp); flex-shrink: 0; scrollbar-width: none; }
+  #chips::-webkit-scrollbar { display: none; }
+  .chip { font-family: 'Crimson Pro', serif; font-size: 13px; font-style: italic; padding: 4px 11px; border: 1px solid var(--brown); color: var(--muted); border-radius: 2px; background: var(--parch); white-space: nowrap; cursor: pointer; flex-shrink: 0; }
+  .chip:active { background: var(--parch-dk); }
+
+  /* Input row */
+  #input-row {
+    display: flex;
+    gap: 8px;
+    padding: 10px 12px;
+    padding-bottom: calc(10px + var(--safe-bot));
+    border-top: 1px solid var(--brown);
+    background: var(--parch-dk);
+    align-items: flex-end;
+    flex-shrink: 0;
+  }
+  #msg-input {
+    flex: 1;
+    font-family: 'Crimson Pro', serif;
+    font-size: 15px;
+    background: var(--parch);
+    border: 1px solid var(--brown);
+    color: var(--ink);
+    padding: 8px 11px;
+    border-radius: 2px;
+    resize: none;
+    min-height: 40px;
+    max-height: 110px;
+    outline: none;
+    line-height: 1.5;
+    -webkit-appearance: none;
+  }
+  #msg-input::placeholder { color: var(--dimmed); font-style: italic; }
+  #send-btn {
+    width: 40px; height: 40px;
+    background: var(--ink-mid);
+    border: none; cursor: pointer;
+    border-radius: 2px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  #send-btn:active { background: var(--ink); }
+  #send-btn svg { width: 16px; height: 16px; stroke: var(--parch); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ── PANEL: Tasks ── */
+  #task-panel { background: var(--parch); }
+  .panel-head { padding: 12px 14px 8px; border-bottom: 1px solid var(--brown-lt); background: var(--parch-dp); flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; }
+  .panel-label { font-family: 'IM Fell English SC', serif; font-size: 11px; letter-spacing: 0.1em; color: var(--brown); }
+  .add-btn { font-family: 'IM Fell English SC', serif; font-size: 11px; letter-spacing: 0.05em; color: var(--red); background: none; border: 1px solid var(--red); padding: 3px 10px; border-radius: 2px; cursor: pointer; }
+  #task-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .task-item { padding: 11px 14px; border-bottom: 0.5px solid var(--brown-lt); display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+  .task-item:active { background: var(--parch-dk); }
+  .task-check { width: 18px; height: 18px; border: 1.5px solid var(--brown); border-radius: 2px; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; }
+  .task-check.done { background: var(--ink-mid); border-color: var(--ink-mid); }
+  .task-check.done::after { content: '✓'; font-size: 11px; color: var(--parch); }
+  .task-body { flex: 1; min-width: 0; }
+  .task-name { font-size: 15px; color: var(--ink); line-height: 1.3; }
+  .task-name.done { text-decoration: line-through; color: var(--dimmed); }
+  .task-meta { display: flex; gap: 8px; margin-top: 3px; flex-wrap: wrap; }
+  .tag { font-size: 11px; font-style: italic; color: var(--dimmed); }
+  .tag.urgent { color: var(--red); }
+  .tag.low { color: var(--green); }
+  .tier-badge { font-family: 'IM Fell English SC', serif; font-size: 9px; letter-spacing: 0.06em; color: var(--brown); background: var(--parch-dp); border: 0.5px solid var(--brown-lt); padding: 1px 5px; border-radius: 1px; }
+  .empty-state { padding: 40px 20px; text-align: center; font-size: 14px; font-style: italic; color: var(--dimmed); line-height: 1.7; }
+
+  /* Filter tabs */
+  #task-filters { display: flex; gap: 0; background: var(--parch-dp); border-bottom: 0.5px solid var(--brown-lt); flex-shrink: 0; }
+  .filter-btn { flex: 1; padding: 7px 4px; font-family: 'Crimson Pro', serif; font-size: 12px; font-style: italic; color: var(--dimmed); background: none; border: none; cursor: pointer; border-bottom: 1.5px solid transparent; }
+  .filter-btn.active { color: var(--ink-mid); border-bottom-color: var(--brown); }
+
+  /* ── PANEL: Someday ── */
+  #someday-panel { background: var(--parch); }
+  .someday-item { padding: 12px 14px; border-bottom: 0.5px solid var(--brown-lt); }
+  .someday-name { font-size: 15px; color: var(--ink); line-height: 1.3; }
+  .someday-bucket { font-family: 'IM Fell English SC', serif; font-size: 9px; letter-spacing: 0.06em; color: var(--red); margin-bottom: 2px; }
+
+  /* ── PANEL: Settings ── */
+  #settings-panel { background: var(--parch); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .settings-section { padding: 16px 16px 8px; border-bottom: 0.5px solid var(--brown-lt); }
+  .settings-label { font-family: 'IM Fell English SC', serif; font-size: 10px; letter-spacing: 0.1em; color: var(--brown); margin-bottom: 10px; }
+  .settings-row { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+  .settings-row label { font-size: 13px; font-style: italic; color: var(--muted); }
+  .settings-row input, .settings-row textarea {
+    font-family: 'Crimson Pro', serif; font-size: 14px;
+    background: var(--parch-dk); border: 1px solid var(--brown-lt);
+    color: var(--ink); padding: 8px 10px; border-radius: 2px;
+    outline: none; width: 100%; -webkit-appearance: none;
+  }
+  .settings-row textarea { resize: none; min-height: 70px; line-height: 1.5; }
+  .save-btn {
+    width: 100%; padding: 11px;
+    font-family: 'IM Fell English SC', serif; font-size: 13px; letter-spacing: 0.05em;
+    background: var(--ink-mid); color: var(--parch);
+    border: none; border-radius: 2px; cursor: pointer; margin-top: 4px;
+  }
+  .save-btn:active { background: var(--ink); }
+  .settings-note { font-size: 12px; font-style: italic; color: var(--dimmed); line-height: 1.5; margin-top: 6px; }
+
+  /* ── Onboarding overlay ── */
+  #onboarding {
+    position: fixed; inset: 0; background: var(--parch);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 32px 24px; z-index: 100;
+    padding-top: calc(32px + var(--safe-top));
+    padding-bottom: calc(32px + var(--safe-bot));
+  }
+  #onboarding.hidden { display: none; }
+  .ob-ornament { font-size: 11px; color: var(--brown-lt); letter-spacing: 4px; margin-bottom: 16px; }
+  .ob-title { font-family: 'IM Fell English SC', serif; font-size: 28px; color: var(--ink-mid); text-align: center; margin-bottom: 6px; }
+  .ob-sub { font-size: 15px; font-style: italic; color: var(--muted); text-align: center; margin-bottom: 28px; line-height: 1.6; }
+  .ob-rule { width: 80px; height: 1px; background: var(--brown-lt); margin: 0 auto 24px; }
+  .ob-step { width: 100%; max-width: 380px; margin-bottom: 20px; }
+  .ob-step label { display: block; font-family: 'IM Fell English SC', serif; font-size: 11px; letter-spacing: 0.08em; color: var(--brown); margin-bottom: 6px; }
+  .ob-step input {
+    width: 100%; font-family: 'Crimson Pro', serif; font-size: 16px;
+    background: var(--parch-dk); border: 1px solid var(--brown);
+    color: var(--ink); padding: 10px 12px; border-radius: 2px; outline: none;
+    -webkit-appearance: none;
+  }
+  .ob-step input::placeholder { color: var(--dimmed); font-style: italic; }
+  .ob-prompt { width: 100%; max-width: 380px; margin-bottom: 20px; }
+  .ob-prompt label { display: block; font-family: 'IM Fell English SC', serif; font-size: 11px; letter-spacing: 0.08em; color: var(--brown); margin-bottom: 6px; }
+  .ob-prompt textarea {
+    width: 100%; font-family: 'Crimson Pro', serif; font-size: 15px;
+    background: var(--parch-dk); border: 1px solid var(--brown);
+    color: var(--ink); padding: 10px 12px; border-radius: 2px; outline: none;
+    resize: none; min-height: 80px; line-height: 1.5; -webkit-appearance: none;
+  }
+  .ob-prompt textarea::placeholder { color: var(--dimmed); font-style: italic; }
+  .ob-btn {
+    width: 100%; max-width: 380px; padding: 13px;
+    font-family: 'IM Fell English SC', serif; font-size: 14px; letter-spacing: 0.06em;
+    background: var(--ink-mid); color: var(--parch);
+    border: none; border-radius: 2px; cursor: pointer;
+  }
+  .ob-btn:active { background: var(--ink); }
+</style>
+</head>
+<body>
+
+<!-- Onboarding -->
+<div id="onboarding">
+  <div class="ob-ornament">✦ · ✦ · ✦</div>
+  <div class="ob-title">QuestLog</div>
+  <div class="ob-sub">Your personal companion.<br>Let's begin with one question.</div>
+  <div class="ob-rule"></div>
+  <div class="ob-step">
+    <label>Your name</label>
+    <input type="text" id="ob-name" placeholder="What shall I call you?" autocomplete="off" autocorrect="off">
+  </div>
+  <div class="ob-step">
+    <label>Name your Scribe</label>
+    <input type="text" id="ob-scribe" placeholder="Give your companion a name…" autocomplete="off" autocorrect="off">
+  </div>
+  <div class="ob-prompt">
+    <label>One thing rattling around in your head</label>
+    <textarea id="ob-task" placeholder="Something you haven't dealt with yet… anything at all." rows="3"></textarea>
+  </div>
+  <button class="ob-btn" onclick="finishOnboarding()">Begin the Chronicle ✦</button>
+</div>
+
+<!-- App -->
+<div id="app">
+  <div id="topbar">
+    <div id="app-title">✦ QuestLog</div>
+    <div id="scribe-status"><div class="status-dot" id="status-dot"></div><span id="scribe-name-display">The Scribe</span></div>
+  </div>
+  <div id="tabs">
+    <button class="tab active" onclick="switchTab('chat', this)">The Scribe</button>
+    <button class="tab" onclick="switchTab('tasks', this)">Ledger</button>
+    <button class="tab" onclick="switchTab('someday', this)">Someday</button>
+    <button class="tab" onclick="switchTab('settings', this)">Settings</button>
+  </div>
+  <div id="panels">
+
+    <!-- Chat panel -->
+    <div class="panel active" id="chat-panel">
+      <div id="messages"></div>
+      <div id="chips">
+        <div class="chip" onclick="fillInput('I have 20 minutes and low energy — what should I do?')">20 min, low energy</div>
+        <div class="chip" onclick="fillInput('What is most urgent right now?')">what\'s urgent?</div>
+        <div class="chip" onclick="fillInput('I need to do a brain dump — lots swirling')">brain dump</div>
+        <div class="chip" onclick="fillInput('Mark my last task as done')">mark done</div>
+        <div class="chip" onclick="fillInput('Break down my biggest task into steps')">break it down</div>
+      </div>
+      <div id="input-row">
+        <textarea id="msg-input" placeholder="Speak your mind…" rows="1"
+          oninput="autoResize(this)"
+          onkeydown="handleKey(event)"></textarea>
+        <button id="send-btn" onclick="sendMsg()" aria-label="Send">
+          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Tasks panel -->
+    <div class="panel" id="task-panel">
+      <div class="panel-head">
+        <div class="panel-label">Your Ledger</div>
+        <button class="add-btn" onclick="switchTab('chat', document.querySelectorAll('.tab')[0]); setTimeout(()=>document.getElementById('msg-input').focus(), 200)">+ Add via Scribe</button>
+      </div>
+      <div id="task-filters">
+        <button class="filter-btn active" onclick="filterTasks('all', this)">All</button>
+        <button class="filter-btn" onclick="filterTasks('active', this)">Active</button>
+        <button class="filter-btn" onclick="filterTasks('urgent', this)">Urgent</button>
+        <button class="filter-btn" onclick="filterTasks('done', this)">Done</button>
+      </div>
+      <div id="task-list"></div>
+    </div>
+
+    <!-- Someday panel -->
+    <div class="panel" id="someday-panel">
+      <div class="panel-head">
+        <div class="panel-label">The Someday Space</div>
+      </div>
+      <div id="someday-list"></div>
+    </div>
+
+    <!-- Settings panel -->
+    <div class="panel" id="settings-panel">
+      <div class="settings-section">
+        <div class="settings-label">Your Details</div>
+        <div class="settings-row">
+          <label>Your name</label>
+          <input type="text" id="set-name" autocomplete="off">
+        </div>
+        <div class="settings-row">
+          <label>Your Scribe's name</label>
+          <input type="text" id="set-scribe" autocomplete="off">
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-label">AI Connection</div>
+        <div class="settings-row">
+          <label>Anthropic API key</label>
+          <input type="password" id="set-apikey" placeholder="sk-ant-…" autocomplete="off" autocorrect="off" spellcheck="false">
+        </div>
+        <div class="settings-note">Your key is stored only on this device. It never leaves your browser except to call Anthropic directly.</div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-label">Supabase Connection</div>
+        <div class="settings-row">
+          <label>Project URL</label>
+          <input type="text" id="set-sb-url" placeholder="https://xxxx.supabase.co" autocorrect="off" spellcheck="false">
+        </div>
+        <div class="settings-row">
+          <label>Anon key</label>
+          <input type="password" id="set-sb-key" placeholder="eyJ…" autocomplete="off" autocorrect="off" spellcheck="false">
+        </div>
+        <div class="settings-note">Found in your Supabase project under Settings → API.</div>
+      </div>
+      <div class="settings-section">
+        <button class="save-btn" onclick="saveSettings()">Save Settings</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+// PASTE YOUR KEYS HERE after setup (or enter them in Settings)
+const DEFAULT_SB_URL = "https://vsuaozczglydhxtxuero.supabase.co";
+const DEFAULT_SB_KEY = "sb_publishable_L0VAZGB7ARoSU62kOQREbA_TJZMcbqr";
+const DEFAULT_API_KEY = "";
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let cfg = {
+  userName: "",
+  scribeName: "the Scribe",
+  apiKey: DEFAULT_API_KEY,
+  sbUrl: DEFAULT_SB_URL,
+  sbKey: DEFAULT_SB_KEY,
+};
+let tasks = [];
+let somedayItems = [];
+let history = [];
+let currentFilter = 'all';
+
+// ── Persistence (localStorage) ────────────────────────────────────────────────
+function loadCfg() {
+  const saved = localStorage.getItem('ql_cfg');
+  if (saved) cfg = { ...cfg, ...JSON.parse(saved) };
+}
+function saveCfg() {
+  localStorage.setItem('ql_cfg', JSON.stringify(cfg));
+}
+function isOnboarded() {
+  return !!localStorage.getItem('ql_onboarded');
+}
+function markOnboarded() {
+  localStorage.setItem('ql_onboarded', '1');
+}
+
+// ── Supabase ──────────────────────────────────────────────────────────────────
+function sbHeaders() {
+  return {
+    'apikey': cfg.sbKey,
+    'Authorization': `Bearer ${cfg.sbKey}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+  };
+}
+
+async function sbFetch(path, method = 'GET', body = null) {
+  if (!cfg.sbUrl || !cfg.sbKey) return null;
+  const res = await fetch(`${cfg.sbUrl}/rest/v1${path}`, {
+    method,
+    headers: sbHeaders(),
+    body: body ? JSON.stringify(body) : null
+  });
+  if (!res.ok) return null;
+  const text = await res.text();
+  return text ? JSON.parse(text) : [];
+}
+
+async function loadTasks() {
+  const data = await sbFetch('/tasks?order=created_at.asc');
+  if (data) {
+    tasks = data.filter(t => !t.someday);
+    somedayItems = data.filter(t => t.someday);
+    renderTasks();
+    renderSomeday();
+  } else {
+    tasks = JSON.parse(localStorage.getItem('ql_tasks') || '[]');
+    somedayItems = JSON.parse(localStorage.getItem('ql_someday') || '[]');
+    renderTasks();
+    renderSomeday();
+  }
+}
+
+async function saveTask(task) {
+  const { id, ...payload } = task;
+  const data = await sbFetch('/tasks', 'POST', payload);
+  if (data && data[0]) {
+    task.id = data[0].id;
+  } else {
+    task.id = task.id || crypto.randomUUID();
+    const local = JSON.parse(localStorage.getItem('ql_tasks') || '[]');
+    local.push(task);
+    localStorage.setItem('ql_tasks', JSON.stringify(local));
+  }
+}
+
+async function updateTask(id, updates) {
+  await sbFetch(`/tasks?id=eq.${id}`, 'PATCH', updates);
+  const local = JSON.parse(localStorage.getItem('ql_tasks') || '[]');
+  const idx = local.findIndex(t => t.id === id);
+  if (idx >= 0) { local[idx] = { ...local[idx], ...updates }; localStorage.setItem('ql_tasks', JSON.stringify(local)); }
+}
+
+// ── Render tasks ──────────────────────────────────────────────────────────────
+function renderTasks() {
+  const list = document.getElementById('task-list');
+  let filtered = tasks;
+  if (currentFilter === 'active') filtered = tasks.filter(t => !t.done && !t.someday);
+  if (currentFilter === 'urgent') filtered = tasks.filter(t => t.urgent && !t.done);
+  if (currentFilter === 'done') filtered = tasks.filter(t => t.done);
+
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty-state">No tasks here yet.<br>Tell the Scribe what's on your mind.</div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(t => `
+    <div class="task-item" onclick="toggleTask('${t.id}')">
+      <div class="task-check ${t.done ? 'done' : ''}"></div>
+      <div class="task-body">
+        <div class="task-name ${t.done ? 'done' : ''}">${t.urgent && !t.done ? '⚡ ' : ''}${escHtml(t.name)}</div>
+        <div class="task-meta">
+          ${t.energy ? `<span class="tag ${t.energy === 'low' ? 'low' : t.energy === 'high' ? 'urgent' : ''}">${t.energy} energy</span>` : ''}
+          ${t.minutes ? `<span class="tag">~${t.minutes} min</span>` : ''}
+          ${t.tier && t.tier !== 'task' ? `<span class="tier-badge">${t.tier}</span>` : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderSomeday() {
+  const list = document.getElementById('someday-list');
+  if (!somedayItems.length) {
+    list.innerHTML = `<div class="empty-state">Your Someday Space is empty.<br>Dreams, shelved projects, and things<br>worth revisiting live here.</div>`;
+    return;
+  }
+  list.innerHTML = somedayItems.map(t => `
+    <div class="someday-item">
+      <div class="someday-bucket">· Dream ·</div>
+      <div class="someday-name">${escHtml(t.name)}</div>
+    </div>
+  `).join('');
+}
+
+async function toggleTask(id) {
+  const task = tasks.find(t => t.id === id);
+  if (!task) return;
+  const newDone = !task.done;
+  task.done = newDone;
+  renderTasks();
+  await updateTask(id, { done: newDone });
+  if (newDone) {
+    addAiMsg(`${task.name} — marked complete. A small deed, but real. The ledger notes it.`);
+  }
+}
+
+function filterTasks(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTasks();
+}
+
+function escHtml(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Chat ──────────────────────────────────────────────────────────────────────
+function addMsg(role, text) {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  const sender = role === 'user' ? cfg.userName || 'You' : cfg.scribeName || 'The Scribe';
+  div.innerHTML = `<div class="msg-sender">${escHtml(sender)}</div><div class="bubble">${text.replace(/\n/g,'<br>')}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function addAiMsg(text) {
+  return addMsg('ai', text);
+}
+
+function showThinking() {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg ai'; div.id = 'thinking';
+  div.innerHTML = `<div class="msg-sender">${escHtml(cfg.scribeName || 'The Scribe')}</div><div class="bubble"><div class="thinking"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function buildSystem() {
+  const taskSummary = tasks.filter(t => !t.done).map(t => `- ${t.name} (${t.energy || 'medium'} energy, ${t.minutes || '?'} min${t.urgent ? ', URGENT' : ''})`).join('\n') || 'No active tasks yet.';
+  return `You are ${cfg.scribeName || 'the Scribe'}, a warm, witty, honest personal companion for ${cfg.userName || 'the user'}. You help them manage their life — tasks, projects, priorities — through natural conversation.
+
+Your personality: warm but not saccharine. A little dry wit. Honest enough to name what needs naming. You speak sparingly and with purpose. You use slightly literary language but stay clear and readable. You are never a cheerleader. You never lecture.
+
+Current active tasks:
+${taskSummary}
+
+Respond ONLY with a JSON object in this exact shape — no other text, no markdown fences:
+{
+  "message": "your conversational reply in the Scribe's voice",
+  "tasks": [
+    { "name": "task name", "energy": "low|medium|high", "minutes": 15, "done": false, "urgent": false, "tier": "task|project|epic", "someday": false }
+  ],
+  "completedTaskNames": ["exact task name if user said they completed something"]
+}
+
+Rules:
+- Include the COMPLETE updated task list every time — all existing tasks plus any new ones
+- For someday items (dreams, far-future wishes, shelved projects) set someday: true
+- tier: "task" = single doable thing, "project" = multiple steps needed, "epic" = huge/long-term
+- If user asks what to do, pick ONE specific task. Be decisive. Match their energy and time.
+- If a task is actually a project, note it and offer to break it down
+- completedTaskNames: only populate if user explicitly said they finished something
+- Keep message warm, brief, ADHD-friendly. No bullet walls.
+- Never invent tasks the user did not mention.`;
+}
+
+async function sendMsg() {
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  addMsg('user', text);
+  history.push({ role: 'user', content: text });
+  showThinking();
+
+  if (!cfg.apiKey) {
+    document.getElementById('thinking')?.remove();
+    addAiMsg("The Scribe's quill is dry — no API key found. Visit Settings to add your Anthropic key.");
+    return;
+  }
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': cfg.apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: buildSystem(),
+        messages: history
+      })
+    });
+
+    const data = await res.json();
+    document.getElementById('thinking')?.remove();
+
+    if (data.error) {
+      addAiMsg(`The Scribe encountered an error: ${data.error.message}`);
+      return;
+    }
+
+    const raw = data.content?.[0]?.text || '{}';
+    history.push({ role: 'assistant', content: raw });
+
+    let parsed;
+    try { parsed = JSON.parse(raw.replace(/```json|```/g, '').trim()); }
+    catch(e) { parsed = { message: raw, tasks: tasks }; }
+
+    if (parsed.message) addAiMsg(parsed.message);
+
+    if (Array.isArray(parsed.tasks) && parsed.tasks.length) {
+      const newTasks = parsed.tasks.filter(pt => !tasks.some(t => t.name.toLowerCase() === pt.name.toLowerCase()));
+      for (const nt of newTasks) {
+        const task = { ...nt, done: false, id: null };
+        tasks.push(task);
+        await saveTask(task);
+      }
+      if (Array.isArray(parsed.completedTaskNames)) {
+        for (const name of parsed.completedTaskNames) {
+          const task = tasks.find(t => t.name.toLowerCase().includes(name.toLowerCase()));
+          if (task && !task.done) {
+            task.done = true;
+            if (task.id) await updateTask(task.id, { done: true });
+          }
+        }
+      }
+      const newSomeday = parsed.tasks.filter(pt => pt.someday && !somedayItems.some(s => s.name.toLowerCase() === pt.name.toLowerCase()));
+      for (const ns of newSomeday) {
+        const item = { ...ns, id: null };
+        somedayItems.push(item);
+        await saveTask(item);
+      }
+      renderTasks();
+      renderSomeday();
+    }
+  } catch(e) {
+    document.getElementById('thinking')?.remove();
+    addAiMsg("Something went awry reaching the Scribe. Check your connection and try again.");
+  }
+}
+
+// ── Onboarding ────────────────────────────────────────────────────────────────
+async function finishOnboarding() {
+  const name = document.getElementById('ob-name').value.trim();
+  const scribe = document.getElementById('ob-scribe').value.trim();
+  const firstTask = document.getElementById('ob-task').value.trim();
+
+  if (!name) { document.getElementById('ob-name').focus(); return; }
+  if (!scribe) { document.getElementById('ob-scribe').value = 'Aldric'; }
+
+  cfg.userName = name;
+  cfg.scribeName = scribe || 'Aldric';
+  saveCfg();
+  markOnboarded();
+  document.getElementById('onboarding').classList.add('hidden');
+  document.getElementById('scribe-name-display').textContent = cfg.scribeName;
+  populateSettings();
+
+  addAiMsg(`Well met, ${cfg.userName}. I am ${cfg.scribeName} — your Scribe, your companion, your keeper of ledgers. I will learn who you are by being with you. No forms to fill, no systems to configure. Just tell me what is on your mind.`);
+
+  if (firstTask) {
+    setTimeout(() => {
+      document.getElementById('msg-input').value = firstTask;
+      sendMsg();
+    }, 800);
+  }
+}
+
+// ── Settings ──────────────────────────────────────────────────────────────────
+function populateSettings() {
+  document.getElementById('set-name').value = cfg.userName || '';
+  document.getElementById('set-scribe').value = cfg.scribeName || '';
+  document.getElementById('set-apikey').value = cfg.apiKey || '';
+  document.getElementById('set-sb-url').value = cfg.sbUrl || '';
+  document.getElementById('set-sb-key').value = cfg.sbKey || '';
+}
+
+function saveSettings() {
+  cfg.userName = document.getElementById('set-name').value.trim();
+  cfg.scribeName = document.getElementById('set-scribe').value.trim() || 'the Scribe';
+  cfg.apiKey = document.getElementById('set-apikey').value.trim();
+  cfg.sbUrl = document.getElementById('set-sb-url').value.trim().replace(/\/$/, '');
+  cfg.sbKey = document.getElementById('set-sb-key').value.trim();
+  saveCfg();
+  document.getElementById('scribe-name-display').textContent = cfg.scribeName;
+  alert('Settings saved. The Scribe is updated.');
+  loadTasks();
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`${name}-panel`).classList.add('active');
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function fillInput(text) {
+  const inp = document.getElementById('msg-input');
+  inp.value = text; inp.focus(); autoResize(inp);
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 110) + 'px';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadCfg();
+populateSettings();
+
+if (!isOnboarded()) {
+  document.getElementById('onboarding').classList.remove('hidden');
+} else {
+  document.getElementById('onboarding').classList.add('hidden');
+  document.getElementById('scribe-name-display').textContent = cfg.scribeName || 'The Scribe';
+  addAiMsg(`Welcome back, ${cfg.userName || 'adventurer'}. What needs attending to today?`);
+  loadTasks();
+}
+</script>
+<script>if ("serviceWorker" in navigator) { navigator.serviceWorker.register("/sw.js"); }</script>
+</body>
+</html>
