@@ -402,13 +402,39 @@ function markOnboarded() {
 }
 
 // ── Supabase ──────────────────────────────────────────────────────────────────
-function sbHeaders() {
+function sbHeaders(extra = {}) {
   return {
     'apikey': cfg.sbKey,
     'Authorization': `Bearer ${cfg.sbKey}`,
     'Content-Type': 'application/json',
-    'Prefer': 'return=representation'
+    'Accept': 'application/json',
+    'Prefer': 'return=representation',
+    ...extra
   };
+}
+
+async function sbSelect(path) {
+  if (!cfg.sbUrl || !cfg.sbKey) return null;
+  try {
+    const res = await fetch(`${cfg.sbUrl}/rest/v1${path}`, {
+      method: 'GET',
+      headers: {
+        'apikey': cfg.sbKey,
+        'Authorization': `Bearer ${cfg.sbKey}`,
+        'Accept': 'application/json'
+      }
+    });
+    console.log('SELECT status:', res.status);
+    if (!res.ok) {
+      const err = await res.text();
+      console.log('SELECT error:', err);
+      return null;
+    }
+    return await res.json();
+  } catch(e) {
+    console.log('SELECT exception:', e);
+    return null;
+  }
 }
 
 async function sbFetch(path, method = 'GET', body = null) {
@@ -425,24 +451,18 @@ async function sbFetch(path, method = 'GET', body = null) {
 }
 
 async function loadTasks() {
-  console.log('loadTasks called');
-  try {
-    const data = await sbFetch('/tasks?order=created_at.asc');
-    console.log('Supabase tasks response:', data);
-    if (Array.isArray(data)) {
-      tasks = data.filter(t => !t.someday);
-      somedayItems = data.filter(t => t.someday);
-      console.log('Regular tasks:', tasks.length, 'Someday:', somedayItems.length);
-      renderTasks();
-      renderSomeday();
-      return;
-    }
-  } catch(e) {
-    console.log('Supabase load error:', e);
+  console.log('loadTasks called, url:', cfg.sbUrl);
+  const data = await sbSelect('/tasks?order=created_at.asc');
+  if (Array.isArray(data)) {
+    console.log('Got', data.length, 'tasks from Supabase');
+    tasks = data.filter(t => !t.someday);
+    somedayItems = data.filter(t => t.someday);
+    console.log('Regular:', tasks.length, 'Someday:', somedayItems.length);
+  } else {
+    console.log('No data from Supabase, tasks array:', data);
+    tasks = [];
+    somedayItems = [];
   }
-  console.log('Falling back to localStorage');
-  tasks = JSON.parse(localStorage.getItem('ql_tasks') || '[]');
-  somedayItems = JSON.parse(localStorage.getItem('ql_someday') || '[]');
   renderTasks();
   renderSomeday();
 }
